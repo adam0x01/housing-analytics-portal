@@ -1,0 +1,24 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+artifacts/
+node_modules/
+.next/
+coverage/
+target/
+dist/
+build/
+tmp/
+private/
+*.m4a
+*.joblib
+
+# Personal interview preparation (kept local)
+/docs/interview-preparation.md
