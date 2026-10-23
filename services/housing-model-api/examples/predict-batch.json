@@ -1,0 +1,92 @@
+[
+  {
+    "square_footage": 1550.0,
+    "bedrooms": 3,
+    "bathrooms": 2.0,
+    "year_built": 1997,
+    "lot_size": 6800.0,
+    "distance_to_city_center": 4.1,
+    "school_rating": 7.6
+  },
+  {
+    "square_footage": 2200.0,
+    "bedrooms": 4,
+    "bathrooms": 2.5,
+    "year_built": 2008,
+    "lot_size": 9600.0,
+    "distance_to_city_center": 7.0,
+    "school_rating": 8.8
+  },
+  {
+    "square_footage": 1180.0,
+    "bedrooms": 2,
+    "bathrooms": 1.0,
+    "year_built": 1982,
+    "lot_size": 5100.0,
+    "distance_to_city_center": 2.5,
+    "school_rating": 6.7
+  },
+  {
+    "square_footage": 1870.0,
+    "bedrooms": 3,
+    "bathrooms": 2.5,
+    "year_built": 2001,
+    "lot_size": 7900.0,
+    "distance_to_city_center": 5.5,
+    "school_rating": 8.3
+  },
+  {
+    "square_footage": 1430.0,
+    "bedrooms": 3,
+    "bathrooms": 1.5,
+    "year_built": 1990,
+    "lot_size": 6200.0,
+    "distance_to_city_center": 3.3,
+    "school_rating": 7.2
+  },
+  {
+    "square_footage": 2300.0,
+    "bedrooms": 4,
+    "bathrooms": 3.0,
+    "year_built": 2013,
+    "lot_size": 10300.0,
+    "distance_to_city_center": 8.0,
+    "school_rating": 9.2
+  },
+  {
+    "square_footage": 1650.0,
+    "bedrooms": 3,
+    "bathrooms": 2.0,
+    "year_built": 1999,
+    "lot_size": 7100.0,
+    "distance_to_city_center": 4.2,
+    "school_rating": 7.8
+  },
+  {
+    "square_footage": 1020.0,
+    "bedrooms": 2,
+    "bathrooms": 1.0,
+    "year_built": 1979,
+    "lot_size": 4400.0,
+    "distance_to_city_center": 2.0,
+    "school_rating": 6.5
+  },
+  {
+    "square_footage": 2100.0,
+    "bedrooms": 4,
+    "bathrooms": 2.5,
+    "year_built": 2005,
+    "lot_size": 9200.0,
+    "distance_to_city_center": 6.8,
+    "school_rating": 8.6
+  },
+  {
+    "square_footage": 1350.0,
+    "bedrooms": 3,
+    "bathrooms": 1.0,
+    "year_built": 1988,
+    "lot_size": 5700.0,
+    "distance_to_city_center": 3.1,
+    "school_rating": 7.0
+  }
+]

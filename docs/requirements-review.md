@@ -65,7 +65,7 @@ Features, in model order: `square_footage`, `bedrooms`, `bathrooms`, `year_built
 
 ## Decisions still to confirm
 
-1. Interview/submission deadline and whether a hosted URL is expected, or a live local container demonstration is sufficient. The PDF requests deployment and a live demo but gives no hosting provider.
+1. Exact interview/submission date and whether a hosted URL is expected, or a live local container demonstration is sufficient. The recording mentions an early-next-week preference relative to that conversation; the precise calendar date is not established. The PDF requests deployment and a live demo but gives no hosting provider.
 2. Currency, distance/lot-size units, and school-rating scale. The implementation retains source values until these are supplied.
 3. Whether estimate history must persist across devices/users. A database or authentication is not specified.
 4. Scope of market analysis: the supplied data supports a cross-sectional segment dashboard, not historical price trends.

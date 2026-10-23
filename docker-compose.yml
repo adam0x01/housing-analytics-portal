@@ -1,0 +1,13 @@
+services:
+  housing-model-api:
+    build:
+      context: .
+      dockerfile: services/housing-model-api/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      MODEL_PATH: /app/artifacts/model.joblib
+    read_only: true
+    tmpfs:
+      - /tmp
+    init: true
