@@ -5,11 +5,8 @@ import {
   BarChart3,
   Building2,
   Calculator,
-  Database,
-  GitCompareArrows,
   History,
   Ruler,
-  ScanLine,
 } from "lucide-react";
 import { serverApi } from "@/lib/server-api";
 import type { HistoryPage, MarketOverview } from "@/lib/types";
@@ -27,7 +24,6 @@ import { AreaPriceChart, DistributionChart } from "@/components/charts";
 import {
   EmptyState,
   ErrorNotice,
-  PageHeading,
   StatCard,
 } from "@/components/page-parts";
 export const dynamic = "force-dynamic";
@@ -42,19 +38,7 @@ export default async function OverviewPage() {
     historyResult.status === "fulfilled" ? historyResult.value : null;
   return (
     <div className="space-y-6">
-      <PageHeading
-        eyebrow="Your property workspace"
-        title="A clearer view of property value."
-        description="Estimate with confidence in your process. Explore the data behind every decision."
-        action={
-          <Button asChild>
-            <Link href="/estimator">
-              <Calculator />
-              New estimate
-            </Link>
-          </Button>
-        }
-      />
+      <h1 className="sr-only">Overview</h1>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Reference properties"
@@ -84,7 +68,7 @@ export default async function OverviewPage() {
       <div className="grid gap-5 xl:grid-cols-2">
         <Link href="/estimator" className="group block">
           <Card className="h-full gap-0 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[.07] to-card py-0 shadow-none transition-colors hover:border-primary/50">
-            <CardContent className="flex items-start gap-4 p-6">
+            <CardContent className="flex items-center gap-4 p-5">
               <span className="rounded-xl bg-primary/10 p-3 text-primary">
                 <Calculator className="size-6" strokeWidth={1.6} />
               </span>
@@ -95,20 +79,16 @@ export default async function OverviewPage() {
                   </h2>
                   <ArrowUpRight className="size-5 text-primary" />
                 </div>
-                <p className="mt-2 max-w-md text-xs leading-6 text-muted-foreground">
-                  Turn seven property details into an estimate. Save your
-                  results and compare homes side by side.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create and compare estimates.
                 </p>
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-primary">
-                  Start an estimate <ArrowRight className="size-3.5" />
-                </span>
               </div>
             </CardContent>
           </Card>
         </Link>
         <Link href="/market" className="group block">
           <Card className="h-full gap-0 py-0 shadow-none transition-colors hover:border-primary/50">
-            <CardContent className="flex items-start gap-4 p-6">
+            <CardContent className="flex items-center gap-4 p-5">
               <span className="rounded-xl bg-secondary p-3 text-foreground">
                 <BarChart3 className="size-6" strokeWidth={1.6} />
               </span>
@@ -119,13 +99,9 @@ export default async function OverviewPage() {
                   </h2>
                   <ArrowUpRight className="size-5 text-muted-foreground" />
                 </div>
-                <p className="mt-2 max-w-md text-xs leading-6 text-muted-foreground">
-                  Explore price distributions, filter property segments, and
-                  model a different set of possibilities.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Filter properties and explore scenarios.
                 </p>
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-primary">
-                  Explore the dataset <ArrowRight className="size-3.5" />
-                </span>
               </div>
             </CardContent>
           </Card>
@@ -137,7 +113,7 @@ export default async function OverviewPage() {
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
                 <CardTitle className="text-sm">
-                  The relationship between space and price
+                  Price by floor area
                 </CardTitle>
                 <CardDescription className="mt-1.5 text-xs">
                   Observed prices by floor area in the reference sample
@@ -186,14 +162,11 @@ export default async function OverviewPage() {
           message="You can still open the estimator while the market service reconnects."
         />
       )}
-      <div className="grid gap-5 xl:grid-cols-[1.45fr_1fr]">
+      <div>
         <Card className="shadow-none">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-sm">Recent estimates</CardTitle>
-              <CardDescription className="text-xs">
-                Pick up where you left off
-              </CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/estimator/history" className="text-xs">
@@ -248,52 +221,6 @@ export default async function OverviewPage() {
                 }
               />
             )}
-          </CardContent>
-        </Card>
-        <Card className="gap-0 bg-secondary/35 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-sm">Know your data</CardTitle>
-            <CardDescription className="text-xs">
-              A transparent starting point
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-2">
-            {[
-              {
-                icon: Database,
-                title: "A focused reference sample",
-                text: "The dataset supports comparisons between property segments, rather than historical market trends.",
-              },
-              {
-                icon: ScanLine,
-                title: "An explainable baseline",
-                text: "View the regression coefficients, cross-validation results, and model limitations.",
-              },
-              {
-                icon: GitCompareArrows,
-                title: "Explore before you decide",
-                text: "Compare saved estimates or change a feature in the what-if studio.",
-              },
-            ].map((item) => (
-              <div className="flex gap-3" key={item.title}>
-                <item.icon
-                  className="mt-0.5 size-4 shrink-0 text-primary"
-                  strokeWidth={1.7}
-                />
-                <div>
-                  <p className="text-xs font-medium">{item.title}</p>
-                  <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                    {item.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-            <Link
-              href="/model"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary"
-            >
-              View model details <ArrowUpRight className="size-3.5" />
-            </Link>
           </CardContent>
         </Card>
       </div>

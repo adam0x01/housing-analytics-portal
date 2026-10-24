@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import {
-  ArrowUpRight,
   BarChart3,
   Building2,
   Calculator,
@@ -84,11 +83,11 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { ids } = useComparison();
   return (
-    <nav className="mt-9 space-y-1" aria-label="Main navigation">
-      {navigation.map((item) => (
+    <nav className="mt-4 space-y-1" aria-label="Main navigation">
+      {navigation.map((item, index) => (
         <div key={item.href}>
           {item.group && (
-            <p className="mb-2 mt-6 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <p className={cn("mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground", index > 0 && "mt-5")}>
               {item.group}
             </p>
           )}
@@ -137,26 +136,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Brand />
         </div>
         <Navigation />
-        <div className="mt-auto rounded-xl border bg-background/50 p-3.5">
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <span className="size-2 rounded-full bg-primary/65" />
-            Reference workspace
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-            Explore property values with a consistent view of your data.
-          </p>
-          <Link
-            href="/model"
-            className="mt-3 flex items-center gap-1 text-[11px] font-medium text-primary"
-          >
-            About the model <ArrowUpRight className="size-3" />
-          </Link>
-        </div>
-        <div className="mt-4 flex items-center gap-2.5 px-2 py-1 text-[11px] text-muted-foreground">
-          <Monitor className="size-4" />
-          Housing Analytics
-          <span className="ml-auto font-mono text-[10px]">v1.0</span>
-        </div>
       </aside>
       <div className="lg:pl-[238px]">
         <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-card/95 px-4 backdrop-blur sm:px-7 lg:px-9">
@@ -185,14 +164,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-medium">{page}</span>
           </div>
           <div className="flex items-center gap-4">
-            <Badge
-              variant="outline"
-              className="hidden gap-1.5 rounded-full py-1 font-normal text-muted-foreground sm:flex"
-            >
-              <span className="size-1.5 rounded-full bg-primary" />
-              Reference dataset
-            </Badge>
-            <span className="hidden h-5 w-px bg-border sm:block" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -227,10 +198,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         >
           {children}
         </main>
-        <footer className="mx-4 flex flex-wrap items-center justify-between gap-2 border-t px-1 py-5 text-[10px] text-muted-foreground sm:mx-7 lg:mx-9">
-          <span>Housing Analytics · Property insights, clearly presented.</span>
-          <span>Sample data · Price units as supplied</span>
-        </footer>
       </div>
     </div>
   );
