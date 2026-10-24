@@ -65,16 +65,20 @@ const navigation = [
 ];
 function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-3 px-3 py-1">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <Building2 className="size-5" strokeWidth={1.8} />
+    <Link
+      href="/"
+      aria-label="Housing Analytics Portal home"
+      className="flex items-center gap-2.5 rounded-lg px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <Building2 className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
       </span>
-      <span>
-        <span className="block text-[17px] font-semibold tracking-tight">
-          Housing<span className="text-primary">.</span>
+      <span className="min-w-0">
+        <span className="block whitespace-nowrap text-[15px] leading-5 font-semibold tracking-tight">
+          Housing Analytics
         </span>
-        <span className="block text-[10px] font-medium tracking-[0.16em] text-muted-foreground uppercase">
-          Analytics portal
+        <span className="block text-[11px] leading-4 font-medium text-muted-foreground">
+          Portal
         </span>
       </span>
     </Link>
