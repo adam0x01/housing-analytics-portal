@@ -20,7 +20,7 @@ export default function RootLayout({
           <AppShell
             deployment={{
               environment: process.env.APP_ENVIRONMENT?.trim() || "Testing",
-              version: process.env.APP_VERSION?.trim().replace(/^v/i, "") || "2.1",
+              version: process.env.APP_VERSION?.trim().replace(/^v/i, "") || "0.0.1",
             }}
           >
             {children}

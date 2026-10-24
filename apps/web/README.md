@@ -43,7 +43,7 @@ Comparison links can retain explicit selected UUIDs in `?ids=uuid,uuid`; the wha
 | `API_TIMEOUT_MS` | `15000` | Timeout for API requests |
 | `MODEL_DOCS_URL` | `http://localhost:8000/docs` | Browser-accessible model Swagger link |
 | `APP_ENVIRONMENT` | `Testing` | Public deployment label in the sidebar footer |
-| `APP_VERSION` | `2.1` | Public release label, displayed with a `v` prefix |
+| `APP_VERSION` | `0.0.1` | Public release label, displayed with a `v` prefix |
 
 Compose supplies internal service-name addresses. For native development, use loopback addresses. Change these variables and restart the web process/container; no frontend rebuild is needed for server URL changes. No `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
 
