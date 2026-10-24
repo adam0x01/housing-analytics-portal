@@ -136,6 +136,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Brand />
         </div>
         <Navigation />
+        <p className="mt-auto px-2 pt-4 pb-1 text-right font-mono text-[10px] text-muted-foreground">
+          v1.0
+        </p>
       </aside>
       <div className="lg:pl-[238px]">
         <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-card/95 px-4 backdrop-blur sm:px-7 lg:px-9">
