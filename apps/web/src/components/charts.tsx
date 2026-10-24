@@ -32,7 +32,7 @@ export function PriceBars({
   return (
     <div
       style={{ height }}
-      className="min-w-0 w-full"
+      className="min-w-0 w-full overflow-hidden"
       role="img"
       aria-label={data
         .map((item) => `${item.name}: ${number(item.price)} source price units`)
@@ -74,7 +74,7 @@ export function PriceBars({
 export function AreaPriceChart({ properties }: { properties: Property[] }) {
   return (
     <div
-      className="h-[255px] min-w-0 w-full"
+      className="h-[255px] min-w-0 w-full overflow-hidden"
       role="img"
       aria-label="Scatter chart of floor area versus observed price, grouped by bedroom count"
     >
@@ -129,7 +129,7 @@ export function DistributionChart({
 }) {
   return (
     <div
-      className="h-[230px] min-w-0 w-full"
+      className="h-[230px] min-w-0 w-full overflow-hidden"
       role="img"
       aria-label={`Property price distribution: ${data.map((item) => `${item.label}: ${item.count} properties`).join(", ")}`}
     >

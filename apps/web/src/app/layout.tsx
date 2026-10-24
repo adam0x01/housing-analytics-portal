@@ -17,7 +17,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
-          <AppShell>{children}</AppShell>
+          <AppShell
+            deployment={{
+              environment: process.env.APP_ENVIRONMENT?.trim() || "Testing",
+              version: process.env.APP_VERSION?.trim().replace(/^v/i, "") || "2.1",
+            }}
+          >
+            {children}
+          </AppShell>
         </Providers>
       </body>
     </html>

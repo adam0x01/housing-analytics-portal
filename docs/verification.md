@@ -24,6 +24,7 @@ The Python TestClient currently emits an upstream HTTPX deprecation warning. Its
 - Downloaded CSV and PDF from the browser. Parsed the downloaded CSV to verify all 21 rows met the active filters. Rendered the generated PDF and checked headers, table alignment, legibility, and pagination.
 - Selected reference Property 002 and changed bathrooms from 2 to 2.5. The Java service returned real model predictions of `285478.90` and `289197.37`, a difference of `3718.47`. The observed dataset price (`265000`) is labelled separately.
 - After simplifying the overview and shared sidebar, TypeScript, the production Docker build, and the full stack smoke check passed again. Checked the compact sidebar at 1280px in light/dark mode and the navigation drawer at 390px; no horizontal overflow. Refreshed the overview screenshots. The logo-to-navigation gap is 16px, and the dataset badge, reference card, duplicate branding/footer, introductory slogan, and explanatory overview panel are removed.
+- Added a configurable `Testing · v2.1` deployment footer and browser diagnostics on desktop and mobile. Verified the actual user agent, page path, locale/time zone, viewport updates when reopened, copy-success feedback, and closing the nested mobile popover/drawer. Checked both themes and a 390px viewport. Chart containers clip hidden tooltip overflow when resizing. TypeScript, all 15 web tests, and the production Docker build passed after the addition.
 
 ## Failure and persistence checks
 

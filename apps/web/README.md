@@ -42,8 +42,12 @@ Comparison links can retain explicit selected UUIDs in `?ids=uuid,uuid`; the wha
 | `MARKET_API_URL` | `http://127.0.0.1:8002` | Java application API, read at runtime on the server |
 | `API_TIMEOUT_MS` | `15000` | Timeout for API requests |
 | `MODEL_DOCS_URL` | `http://localhost:8000/docs` | Browser-accessible model Swagger link |
+| `APP_ENVIRONMENT` | `Testing` | Public deployment label in the sidebar footer |
+| `APP_VERSION` | `2.1` | Public release label, displayed with a `v` prefix |
 
 Compose supplies internal service-name addresses. For native development, use loopback addresses. Change these variables and restart the web process/container; no frontend rebuild is needed for server URL changes. No `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
+
+The sidebar footer shows the deployment environment and release, independently of Next.js's production build mode. Its debug icon opens browser diagnostics on desktop and mobile: the actual user agent, viewport, language, time zone, and page path. Details are read when opened and can be copied for a bug report; no diagnostics request is sent to a backend.
 
 Server components load initial data directly from the configured application APIs. Client forms, charts, sorting, filters, downloads, and comparison controls use client components. Browser requests use same-origin `/api/estimator/...` and `/api/market/...` route handlers with an explicit path allowlist. Those handlers forward only required headers, enforce a payload-size limit, preserve download headers, and return clear connection/timeout errors. The browser never calls internal container addresses. The Python and Java backends both own their required model integrations.
 

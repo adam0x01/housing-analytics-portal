@@ -33,6 +33,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useComparison } from "@/components/providers";
+import { SidebarStatus, type DeploymentInfo } from "@/components/sidebar-status";
 import { cn } from "@/lib/utils";
 const navigation = [
   { label: "Overview", href: "/", icon: LayoutDashboard, group: "Workspace" },
@@ -87,7 +88,12 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       {navigation.map((item, index) => (
         <div key={item.href}>
           {item.group && (
-            <p className={cn("mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground", index > 0 && "mt-5")}>
+            <p
+              className={cn(
+                "mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+                index > 0 && "mt-5",
+              )}
+            >
               {item.group}
             </p>
           )}
@@ -117,7 +123,10 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
     </nav>
   );
 }
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, deployment }: {
+  children: React.ReactNode;
+  deployment: DeploymentInfo;
+}) {
   const pathname = usePathname();
   const page =
     navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
@@ -136,9 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Brand />
         </div>
         <Navigation />
-        <p className="mt-auto px-2 pt-4 pb-1 text-right font-mono text-[10px] text-muted-foreground">
-          v1.0
-        </p>
+        <SidebarStatus {...deployment} />
       </aside>
       <div className="lg:pl-[238px]">
         <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-card/95 px-4 backdrop-blur sm:px-7 lg:px-9">
@@ -158,6 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 <Brand />
                 <Navigation onNavigate={() => setMobileOpen(false)} />
+                <SidebarStatus {...deployment} />
               </SheetContent>
             </Sheet>
             <span className="hidden text-muted-foreground sm:inline">
