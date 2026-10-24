@@ -1,0 +1,23 @@
+server:
+  port: ${PORT:8002}
+  error:
+    include-message: never
+spring:
+  application:
+    name: housing-market-api
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    deserialization:
+      fail-on-unknown-properties: true
+      accept-float-as-int: false
+    mapper:
+      allow-coercion-of-scalars: false
+  cache:
+    type: caffeine
+    cache-names: market-overview
+    caffeine:
+      spec: maximumSize=128,expireAfterWrite=5m,recordStats
+market:
+  dataset-path: ${DATASET_PATH:../../data/house-prices.csv}
+  model-api-url: ${MODEL_API_URL:http://127.0.0.1:8000}
+  model-timeout-ms: ${MODEL_TIMEOUT_MS:10000}
