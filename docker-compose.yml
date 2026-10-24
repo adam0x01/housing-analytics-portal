@@ -4,10 +4,69 @@ services:
       context: .
       dockerfile: services/housing-model-api/Dockerfile
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${MODEL_PORT:-8000}:8000"
     environment:
       MODEL_PATH: /app/artifacts/model.joblib
     read_only: true
     tmpfs:
       - /tmp
     init: true
+  estimator-api:
+    build:
+      context: .
+      dockerfile: services/estimator-api/Dockerfile
+    environment:
+      MODEL_API_URL: ${MODEL_API_URL:-http://housing-model-api:8000}
+      MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-10}
+      DATABASE_PATH: /app/storage/estimates.sqlite
+    ports:
+      - "127.0.0.1:${ESTIMATOR_PORT:-8001}:8001"
+    volumes:
+      - estimator-data:/app/storage
+    depends_on:
+      housing-model-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    init: true
+  market-api:
+    build:
+      context: .
+      dockerfile: services/market-api/Dockerfile
+    environment:
+      MODEL_API_URL: ${MODEL_API_URL:-http://housing-model-api:8000}
+      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-10000}
+      DATASET_PATH: /app/data/house-prices.csv
+    ports:
+      - "127.0.0.1:${MARKET_PORT:-8002}:8002"
+    depends_on:
+      housing-model-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    init: true
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      ESTIMATOR_API_URL: ${ESTIMATOR_API_URL:-http://estimator-api:8001}
+      MARKET_API_URL: ${MARKET_API_URL:-http://market-api:8002}
+      API_TIMEOUT_MS: ${API_TIMEOUT_MS:-15000}
+      MODEL_DOCS_URL: ${MODEL_DOCS_URL:-http://localhost:8000/docs}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    depends_on:
+      estimator-api:
+        condition: service_healthy
+      market-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    init: true
+
+volumes:
+  estimator-data:

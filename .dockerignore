@@ -9,7 +9,14 @@
 **/.next
 **/target
 private
+docs/interview-preparation.md
 tmp
 .env
 .env.*
+!**/.env.example
+**/storage
+**/*.sqlite*
+**/*.tsbuildinfo
+**/.env
+**/.env.*
 !**/.env.example

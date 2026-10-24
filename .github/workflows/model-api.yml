@@ -42,7 +42,7 @@ jobs:
           pytest -q
       - name: Build and check container
         run: |
-          docker compose up --build -d --wait --wait-timeout 120
+          docker compose up --build -d --wait --wait-timeout 120 housing-model-api
           curl --fail http://127.0.0.1:8000/health
       - name: Stop container
         if: always()

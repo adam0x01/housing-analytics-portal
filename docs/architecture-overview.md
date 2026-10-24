@@ -4,23 +4,24 @@
 
 ```mermaid
 flowchart LR
-    Browser[Browser] --> Web[Next.js portal]
+    Browser[Browser] --> Web[Next.js portal and same-origin route handlers]
     Web --> Estimator[Python estimator API]
     Web --> Market[Java market API]
     Estimator --> Model[Python housing model API]
+    Estimator --> History[(SQLite estimate history)]
     Market --> Model
     Training[Offline training command] --> Model
     Data[(Versioned housing CSV)] --> Training
     Data --> Market
 ```
 
-`apps/web` is one Next.js application with estimator and market routes. Shared navigation, layout, design tokens, loading states, and error boundaries live there. Server components fetch initial data. Interactive forms, filters, charts, and comparison controls use client components. Choose the exact frontend dependency versions when that milestone starts.
+`apps/web` is one Next.js 16 App Router application using TypeScript, Tailwind 4, shadcn/ui (Radix), and Recharts. Shared navigation, layout, design tokens, loading states, and error boundaries live there. Server components fetch initial data. Forms, filters, charts, and comparison controls use client components. React Hook Form and Zod validate form state. Theme preferences persist through next-themes.
 
 `services/housing-model-api` owns feature validation, model training/evaluation, artifact metadata, and inference. It exposes a small stable HTTP contract consumed by both application backends. Training happens separately from request handling. A process loads its artifact once on startup and fails startup if it cannot load a valid artifact.
 
-`services/estimator-api` will own the property-estimation application workflow, validate submissions, and call the model service with a timeout. History and comparison requirements belong to this application. Persistence requirements will determine whether initial browser storage is sufficient or a service database is needed.
+`services/estimator-api` owns property-estimation workflows, validates submissions, and calls the model with a configurable HTTPX timeout. It saves successful predictions and their original feature values/model versions in SQLite. A named Docker volume retains history across restarts. Comparisons retrieve existing records without recomputing predictions. Failed upstream calls do not save estimates. This is one shared demo workspace; private per-user history would require authentication and ownership checks.
 
-`services/market-api` will use Java 21 and Spring Boot 3.4.4, as requested. It will read the housing dataset, calculate segment aggregates, cache suitable responses, call the model API for what-if scenarios, and support exports. The dataset contains no market time series, so the dashboard must describe the sample and its segments accurately.
+`services/market-api` uses Java 21 and Spring Boot 3.4.4, as requested. It validates and loads the dataset once, calculates filtered aggregates, and uses a bounded five-minute Caffeine cache for overview results. What-if scenarios call the model's batch endpoint through Spring RestClient. Commons CSV and PDFBox produce filtered exports. The immutable dataset and its SHA-256 define a process's source version; restarting with new data also clears the cache. The dashboard describes cross-sectional sample segments, with no invented market time series.
 
 ## Why keep the estimator API separate?
 
@@ -44,11 +45,11 @@ The sample is tiny and strongly correlated. Report evaluation limitations alongs
 
 ## Request flow and operations
 
-Keep the model API internal to the application backends in the complete portal. The first milestone exposes port 8000 locally for Swagger. There is no browser CORS policy until the frontend's actual request path is chosen. Do not expose an unauthenticated training/upload endpoint.
+The browser calls same-origin Next.js `/api/estimator/...` and `/api/market/...` route handlers. The server proxy allowlists routes and forwards downloads and structured failures. React server components call the configured upstreams directly for initial rendering. Internal service addresses are runtime environment variables; they are not baked into browser bundles. No cross-origin browser calls or permissive CORS policy is needed. Port 8000 remains loopback-only for local Swagger. There is no public training/upload endpoint.
 
-The next backends should map invalid input to 422, upstream timeouts to 504, and unavailable upstreams to 503. Set explicit timeouts, propagate useful error messages, and avoid retrying requests indefinitely. Cache market aggregates separately from model predictions and include dataset/model version in any relevant cache key.
+Both application backends map invalid input to 422, upstream timeouts to 504, unavailable upstreams to 503, and malformed model responses to 502. They use explicit timeouts and avoid unbounded retries. Dataset-only market analysis and exports remain available if the model stops. Client actions have pending/error states and cancel obsolete requests. Route-level error recovery uses Next.js `retry()` to refetch data.
 
-Use root Compose to connect implemented services by service name. Add each runnable service only when it exists. Local demonstration comes before choosing a hosted deployment. Secrets, virtual environments, model binaries, recordings, and transcripts are excluded from Git.
+Root Compose connects all four deployables by service name, supplies readiness dependencies, and gives each runtime a non-root user and read-only root filesystem. Only estimator storage and temporary directories are writable. Root `.env.example` documents service URL/port/timeout overrides; service-local examples document native development. Local demonstration comes before choosing external hosting. Secrets, virtual environments, database files, model binaries, recordings, transcripts, and personal preparation notes are excluded from Git.
 
 ## Primary technical references
 

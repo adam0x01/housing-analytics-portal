@@ -12,7 +12,7 @@ The supplied initial text contains the folder tree and a heading for the Housing
 
 ## Requirements checklist
 
-This is the full assignment scope. Only Task 1 is the first implementation milestone.
+This is the full assignment scope. Tasks 1 and 2 are implemented for local Docker demonstration. External hosting and GitHub publication remain separate delivery steps.
 
 | Area | Requirement | Delivery location / plan |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ Features, in model order: `square_footage`, `bedrooms`, `bathrooms`, `year_built
 
 1. Exact interview/submission date and whether a hosted URL is expected, or a live local container demonstration is sufficient. The recording mentions an early-next-week preference relative to that conversation; the precise calendar date is not established. The PDF requests deployment and a live demo but gives no hosting provider.
 2. Currency, distance/lot-size units, and school-rating scale. The implementation retains source values until these are supplied.
-3. Whether estimate history must persist across devices/users. A database or authentication is not specified.
+3. Whether estimate history must be private per user. The implementation persists a shared local workspace in SQLite. Authentication is not specified and is not implemented.
 4. Scope of market analysis: the supplied data supports a cross-sectional segment dashboard, not historical price trends.
 
-These do not block Task 1. They should be resolved before choosing hosting, history persistence, or market chart labels.
+The source units remain explicit in the UI, exports, and model response. The implemented market dashboard describes the supplied cross-sectional sample. Confirm the remaining delivery/access expectations before external hosting.
