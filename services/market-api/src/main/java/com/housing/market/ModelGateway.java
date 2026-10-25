@@ -25,7 +25,10 @@ public class ModelGateway {
       throw new IllegalArgumentException("Invalid model timeout");
     var requestFactory =
         new JdkClientHttpRequestFactory(
-            HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeout)).build());
+            HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofMillis(timeout))
+                .build());
     requestFactory.setReadTimeout(Duration.ofMillis(timeout));
     client = builder.baseUrl(url).requestFactory(requestFactory).build();
   }
