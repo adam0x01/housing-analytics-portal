@@ -4,7 +4,7 @@ kill_signal = "SIGTERM"
 kill_timeout = "30s"
 
 [build]
-  dockerfile = "services/estimator-api/Dockerfile"
+  dockerfile = "../../services/estimator-api/Dockerfile"
   build-target = "fly"
 
 [env]

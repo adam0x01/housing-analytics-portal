@@ -4,7 +4,7 @@ kill_signal = "SIGTERM"
 kill_timeout = "30s"
 
 [build]
-  dockerfile = "services/market-api/Dockerfile"
+  dockerfile = "../../services/market-api/Dockerfile"
 
 [env]
   MODEL_TIMEOUT_MS = "60000"

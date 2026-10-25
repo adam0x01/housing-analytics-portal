@@ -1,7 +1,9 @@
 # Deploy to Fly.io
 
 The four configurations in `deploy/fly/` reuse the existing Dockerfiles and
-build from the repository root. Only `<prefix>-web` has public IP addresses.
+build from the repository root. Dockerfile paths inside the TOML files are
+relative to `deploy/fly/`, while the build context remains the repository root.
+Only `<prefix>-web` has public IP addresses.
 Model, estimator and market use Flycast on the organization's private network;
 unlike direct `.internal` connections, Flycast can wake sleeping Machines.
 
