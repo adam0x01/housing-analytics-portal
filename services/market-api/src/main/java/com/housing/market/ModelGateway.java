@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.*;
 import org.springframework.web.server.ResponseStatusException;
 
+/** Adapts the shared model contract to Java scenarios and maps upstream failures. */
 @Service
 public class ModelGateway {
   private final RestClient client;
@@ -35,6 +36,7 @@ public class ModelGateway {
 
   public WhatIfResult predict(WhatIfRequest input) {
     try {
+      // One batch guarantees both prices come from the same serving model and response.
       ModelOutput output =
           client
               .post()
@@ -60,6 +62,7 @@ public class ModelGateway {
       var baseline = output.predictions().get(0);
       var scenario = output.predictions().get(1);
       double change = scenario.price() - baseline.price();
+      // Use the reference magnitude for signed/negative extrapolations; zero has no ratio.
       Double percent = baseline.price() == 0 ? null : change / Math.abs(baseline.price()) * 100;
       if (!Double.isFinite(change) || (percent != null && !Double.isFinite(percent))) {
         throw new ResponseStatusException(

@@ -1,41 +1,42 @@
-# Verification record
-
-The automated baseline below was recorded locally on 2026-10-24, with subsequent UI checks summarised separately. Docker supplies Python 3.12, Java 21, and Node 22. All four runtime images use non-root users; Compose gives them read-only root filesystems, temporary writable directories, and a dedicated SQLite storage volume. Follow the [project verification instructions](../README.md#verification) to reproduce the checks against a running checkout.
+# Verification
 
 ## Automated checks
 
-| Component | Result | Coverage |
+Rechecked locally on **2026-10-25**. Results describe the local checkout; hosted CI applies to the commits pushed to GitHub.
+
+| Component | Result | Main coverage |
 | --- | --- | --- |
-| Model API | 30 pytest tests passed | Feature contract, supplied examples, batch order, coefficient reconstruction, held-out metrics, repeatable training, invalid input and startup |
-| Estimator API | 12 pytest tests passed | Model forwarding, persistence across app restarts, paginated history, comparison order, validation, timeout/connection/malformed-response handling, failed-request persistence |
-| Market API | 4 Java integration tests passed during Docker build | Real CSV aggregates/filters, empty segments, cache reuse, model batch contract, scenario deltas, filtered CSV, readable multipage PDF |
-| Web | 15 Vitest tests passed; TypeScript and production build passed | Input schemas, fractional bathrooms, years, filters, configurable URLs, route allowlist, error forwarding, export headers, timeouts |
-| Containers | Build and readiness checks passed | Model, Python estimator, Java market, and production Next.js server |
-| Real HTTP stack | `python3 scripts/smoke-stack.py` passed | Dataset/model identity, statistics, filters, actual scenario calls, CSV/PDF responses, validation, history, seven portal pages |
+| Model API | 30 pytest tests passed; Ruff passed | Single/batch inference, supplied samples, validation, coefficients, held-out evaluation, repeatable training |
+| Estimator API | 12 pytest tests passed; Ruff passed | Persistence, pagination, comparison, forwarding, upstream failures, failed-request handling |
+| Market API | 7 Java integration tests passed | Aggregates/filters, caching, model contract, CSV/PDF, Swagger/OpenAPI |
+| Web | 15 Vitest tests passed; lint, TypeScript, production build passed | Feature contracts, API routing, error handling, export forwarding, timeouts |
+| Docker stack | Four images built; all services healthy; smoke check passed | Real service integration, ten batch samples, single inference, three Swagger UIs |
 
-The recorded Python TestClient run emitted an upstream HTTPX deprecation warning. Its assertions passed; the warning concerned the test adapter.
+The model tests used Python 3.12, estimator tests Python 3.13, Java tests JDK 21, and web checks Node 22. Docker supplies Python 3.12 for both Python services. Test adapters emit upstream deprecation warnings; assertions pass.
 
-## Browser checks
+## Reproduce
 
-- Checked desktop and 390px mobile layouts; opened the navigation drawer and followed an application link. Verified the mobile page did not overflow horizontally. Checked form labels, field errors, contrast, loading skeletons, and both light/dark palettes.
-- Entered a zero floor area and verified the client field error before a model request.
-- Created two real sample estimates through the browser. Their model outputs were `250879.73` and `303620.88` source price units. Verified successful-save feedback, persistent history, selection, and the comparison chart/table.
-- Applied bedrooms = 3 and minimum price = 200000. The dashboard returned 21 properties with consistent summaries and charts.
-- Downloaded CSV and PDF from the browser. Parsed the downloaded CSV to verify all 21 rows met the active filters. Rendered the generated PDF and checked headers, table alignment, legibility, and pagination.
-- Selected reference Property 002 and changed bathrooms from 2 to 2.5. The Java service returned real model predictions of `285478.90` and `289197.37`, a difference of `3718.47`. The observed dataset price (`265000`) is labelled separately.
-- Checked the overview and sidebar at 1280px and the navigation drawer at 390px in both themes, with no horizontal overflow. TypeScript, the production Docker build, and the stack smoke check passed after the layout changes.
-- Verified the deployment environment/version footer and browser diagnostics on desktop and mobile: actual user agent, page path, locale/time zone, viewport updates when reopened, copy-success feedback, and closing the nested popover/drawer. Chart containers clip hidden tooltip overflow when resizing. TypeScript, all 15 web tests, and the production Docker build passed after the addition.
+Install dependencies using each service README, then run from that component's directory:
 
-## Failure and persistence checks
+| Directory | Command |
+| --- | --- |
+| `services/housing-model-api` | `ruff check . && ruff format --check . && pytest -q` |
+| `services/estimator-api` | `ruff check . && ruff format --check . && pytest -q` |
+| `services/market-api` | `./mvnw verify` (JDK 21) |
+| `apps/web` | `npm run lint && npm run typecheck && npm test && npm run build` |
 
-- Stopped the model container: estimator and Java what-if requests returned 503 with useful messages. Dataset-only market analysis remained available. The browser displayed a request error. Restored model serving afterward.
-- Restarted the estimator container and compared the complete history response before/after: both saved records and their values remained unchanged.
-- Stopped the Java market service and loaded its portal page: the shared layout stayed usable and the route displayed a clear service-error fallback. Restored the service, clicked its retry control, and verified the complete market dashboard reloaded successfully.
+From the repository root, start the stack and check real HTTP integrations:
 
-## Verification scope
+```bash
+docker compose up --build -d --wait --wait-timeout 180
+docker compose exec -T housing-model-api \
+  python - --web-url http://web:3000 < scripts/smoke-stack.py
+```
 
-The [GitHub Actions workflows](../.github/workflows/) run component checks, image builds, and full-stack integration checks. The results recorded here are local observations, not a statement about a particular hosted CI run.
+The smoke check covers health, dataset/model identity, filters, CSV/PDF exports, real what-if predictions, validation, history, and all seven portal routes. It does not save estimates. The hosted Fly.io demo passed this check on 2026-10-25; the custom domain also returned HTTP 200 with verified TLS using its public DNS address.
 
-These checks cover functionality, error recovery, and persistence on the supplied sample. They do not establish independent valuation accuracy, measured production throughput, or formal accessibility certification. The workspace has shared history and no accounts or per-user authorization.
+## Manual checks and scope
 
-Sample estimates created during browser verification are real model results retained only in the local database volume. A fresh installation starts with empty history.
+Earlier browser checks (2026-10-24) covered desktop/mobile layouts, both themes, invalid form inputs, saving/comparing estimates, filtered exports, and what-if results. Failure checks covered model/service outages, route retry, and history persistence after estimator restart. These are recorded observations, not a formal accessibility audit or production load test.
+
+These checks verify software behaviour and service integration. See [model service notes](model-evaluation.md) for the model lifecycle and demo scope.

@@ -1,10 +1,13 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calculator, GitCompareArrows, History } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 export function EstimatorNavigation() {
   const pathname = usePathname();
+
   return (
     <nav
       aria-label="Estimator views"

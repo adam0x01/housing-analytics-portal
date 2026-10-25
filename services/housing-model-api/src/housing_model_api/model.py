@@ -17,6 +17,8 @@ from housing_model_api.training import ARTIFACT_FORMAT, library_versions
 
 
 class ModelService:
+    """Load one compatible artifact per process and preserve input order during inference."""
+
     def __init__(self, artifact_path: Path):
         if not artifact_path.is_file():
             raise RuntimeError(
@@ -36,6 +38,7 @@ class ModelService:
             raise RuntimeError("Incompatible model artifact; retrain with the current runtime.")
 
     def predict(self, properties: list[PropertyFeatures]) -> PredictionResponse:
+        """Return prices with per-property warnings, without mutating or retraining the model."""
         features = np.asarray([item.feature_vector() for item in properties], dtype=np.float64)
         prices = self.model.predict(features)
         if not np.isfinite(prices).all():

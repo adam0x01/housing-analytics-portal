@@ -6,15 +6,18 @@ export function number(
     ? "—"
     : new Intl.NumberFormat("en-US", { maximumFractionDigits }).format(value);
 }
+
 export function compact(value: number) {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 0,
   }).format(value);
 }
+
 export function featureNumber(name: string, value: number, fractionDigits = 2) {
   return name === "year_built" ? String(value) : number(value, fractionDigits);
 }
+
 export function date(value: string) {
   return new Intl.DateTimeFormat("en-HK", {
     day: "numeric",
@@ -24,6 +27,7 @@ export function date(value: string) {
     timeZone: "Asia/Hong_Kong",
   }).format(new Date(value));
 }
+
 export const featureLabels: Record<string, string> = {
   square_footage: "Floor area",
   bedrooms: "Bedrooms",

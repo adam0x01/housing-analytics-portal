@@ -24,6 +24,7 @@ from housing_model_api.schema import (
 def create_app(artifact_path: Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI):
+        # Fail startup when serving would be impossible, rather than accepting broken requests.
         path = artifact_path or Path(os.environ.get("MODEL_PATH", "artifacts/model.joblib"))
         application.state.model_service = ModelService(path)
         yield

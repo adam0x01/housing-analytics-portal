@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Building2, GitCompareArrows, Plus, X } from "lucide-react";
@@ -33,6 +34,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorNotice } from "@/components/page-parts";
 
+/** Retrieves saved estimates in selection order without rerunning predictions. */
 export function ComparisonWorkspace({
   recent,
   initialIds,
@@ -46,9 +48,12 @@ export function ComparisonWorkspace({
   );
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const { run, pending, error } = useApiAction();
+  // A primitive dependency tracks both membership and order without array identity churn.
   const key = selected.join(",");
+
   useEffect(() => {
     if (!key || key.split(",").length < 2) return;
+
     void run((signal) =>
       api<Estimate[]>("estimator", "estimates/compare", {
         method: "POST",
@@ -59,10 +64,13 @@ export function ComparisonWorkspace({
       if (result) setEstimates(result);
     });
   }, [key, run]);
+
+  // Hide the old response while a different selection is being fetched.
   const visible =
     selected.length >= 2 && estimates.map((item) => item.id).join(",") === key
       ? estimates
       : [];
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -71,6 +79,7 @@ export function ComparisonWorkspace({
           const item = [...recent, ...estimates].find(
             (estimate) => estimate.id === id,
           );
+
           return id ? (
             <Card key={index} className="gap-0 py-0 shadow-none">
               <CardContent className="flex items-center gap-2 p-4">

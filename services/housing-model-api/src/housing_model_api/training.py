@@ -122,6 +122,7 @@ def evaluate(features: np.ndarray, targets: np.ndarray) -> Evaluation:
 
 
 def train(data_path: Path, artifact_path: Path) -> ModelInfo:
+    """Build a serving artifact and companion metadata from the versioned source dataset."""
     dataset_hash = hashlib.sha256(data_path.read_bytes()).hexdigest()
     features, targets = read_training_data(data_path)
     evaluation = evaluate(features, targets)

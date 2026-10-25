@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+// Exclude dataset-only fields (id and observed price) from model requests.
 function features(property: Property): PropertyFeatures {
   return {
     square_footage: property.square_footage,
@@ -49,6 +51,8 @@ function features(property: Property): PropertyFeatures {
     school_rating: property.school_rating,
   };
 }
+
+/** Evaluates reference/scenario together without persisting a new estimate. */
 export function WhatIfWorkspace({
   properties,
   initialProperty,
@@ -59,24 +63,33 @@ export function WhatIfWorkspace({
   const [referenceId, setReferenceId] = useState(initialProperty);
   const reference =
     properties.find((property) => property.id === referenceId) ?? properties[0];
+
   const form = useForm<EstimateForm>({
     resolver: zodResolver(estimateSchema),
     defaultValues: { name: "Scenario", features: features(reference) },
   });
   const values = useWatch({ control: form.control });
+
   const [result, setResult] = useState<WhatIfResult | null>(null);
+
+  // Retain the submitted snapshot so edits can mark a displayed result as stale.
   const [submitted, setSubmitted] = useState<PropertyFeatures | null>(null);
   const { run, pending, error, clearError } = useApiAction();
+
   const changed =
     result && JSON.stringify(values.features) !== JSON.stringify(submitted);
+
   function selectReference(value: string) {
     const property = properties.find((item) => item.id === Number(value));
+
     if (!property) return;
+
     setReferenceId(property.id);
     form.reset({ name: "Scenario", features: features(property) });
     setResult(null);
     clearError();
   }
+
   async function submit(data: EstimateForm) {
     setResult(null);
     const response = await run((signal) =>
@@ -89,11 +102,13 @@ export function WhatIfWorkspace({
         signal,
       }),
     );
+
     if (response) {
       setResult(response);
       setSubmitted(data.features);
     }
   }
+
   return (
     <div className="space-y-5">
       <Card className="gap-0 py-0 shadow-none">

@@ -28,11 +28,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 export const metadata: Metadata = { title: "Model details" };
+
 export const dynamic = "force-dynamic";
+
 export default async function ModelPage() {
   const model = await serverApi<ModelInfo>("estimator", "model-info");
   const docsUrl = process.env.MODEL_DOCS_URL ?? "http://localhost:8000/docs";
+
   return (
     <div className="space-y-6">
       <PageHeading

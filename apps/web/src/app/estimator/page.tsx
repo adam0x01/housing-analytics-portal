@@ -4,13 +4,18 @@ import type { MarketOverview, ModelInfo } from "@/lib/types";
 import { PageHeading } from "@/components/page-parts";
 import { EstimatorNavigation } from "@/components/estimator-navigation";
 import { EstimatorWorkspace } from "@/components/estimator-workspace";
+
 export const metadata: Metadata = { title: "Property value estimator" };
+
 export const dynamic = "force-dynamic";
+
 export default async function EstimatorPage() {
+  // Metadata and market context are optional; a failure should not hide the form.
   const [model, market] = await Promise.allSettled([
     serverApi<ModelInfo>("estimator", "model-info"),
     serverApi<MarketOverview>("market", "market/overview"),
   ]);
+
   return (
     <>
       <PageHeading

@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -55,11 +56,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+/** Server filters define the segment; table search, sorting, and paging stay local. */
 export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
   const [market, setMarket] = useState(initial);
+
+  // Keep draft inputs separate from the filters used for displayed data and exports.
   const [draft, setDraft] = useState<MarketFilters>({});
   const [applied, setApplied] = useState<MarketFilters>({});
   const [validation, setValidation] = useState<string | null>(null);
+
+  // Table presentation is independent of the server-side segment.
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: keyof Property; direction: 1 | -1 }>({
     key: "id",
@@ -67,9 +73,11 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const { run, pending, error } = useApiAction();
+
   const rows = useMemo(
     () =>
       market.properties
@@ -87,8 +95,10 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
+
   async function apply(filters: MarketFilters) {
     setValidation(null);
+
     if (
       Object.values(filters).some(
         (value) =>
@@ -99,8 +109,10 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
       )
     ) {
       setValidation("Filter values must be valid non-negative numbers.");
+
       return;
     }
+
     if (
       (filters.minPrice &&
         filters.maxPrice &&
@@ -110,27 +122,34 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
         Number(filters.minArea) > Number(filters.maxArea))
     ) {
       setValidation("Minimum values must not exceed maximum values.");
+
       return;
     }
+
     const result = await run((signal) =>
       api<MarketOverview>("market", `market/overview?${queryString(filters)}`, {
         signal,
       }),
     );
+
     if (result) {
       setMarket(result);
       setApplied(filters);
       setPage(1);
     }
   }
+
   async function download(format: "csv" | "pdf") {
     setExporting(format);
     setExportError(null);
+
     try {
+      // Export the last successfully applied segment, not unsubmitted filter edits.
       const response = await fetch(
         `/api/market/market/export.${format}?${queryString(applied)}`,
         { signal: AbortSignal.timeout(20000) },
       );
+
       if (!response.ok)
         throw new Error(
           errorMessage(
@@ -138,6 +157,7 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
             "The export could not be generated. Please try again.",
           ),
         );
+
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
       link.href = url;
@@ -145,6 +165,7 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
       document.body.append(link);
       link.click();
       link.remove();
+      // Give the browser time to begin the download before releasing the blob URL.
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast.success(`${format.toUpperCase()} export downloaded`);
     } catch (failure) {
@@ -155,6 +176,7 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
       setExporting(null);
     }
   }
+
   const columns: { key: keyof Property; label: string }[] = [
     { key: "id", label: "Property" },
     { key: "square_footage", label: "Floor area" },
@@ -165,6 +187,7 @@ export function MarketWorkspace({ initial }: { initial: MarketOverview }) {
     { key: "distance_to_city_center", label: "Distance" },
     { key: "price", label: "Observed price" },
   ];
+
   return (
     <div className="space-y-6">
       <Card className="gap-0 shadow-none">

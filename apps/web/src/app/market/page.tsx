@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { MarketWorkspace } from "@/components/market-workspace";
 import { serverApi } from "@/lib/server-api";
 import type { MarketOverview } from "@/lib/types";
+
 export const metadata: Metadata = { title: "Market analysis" };
+
 export const dynamic = "force-dynamic";
+
 export default async function MarketPage() {
   const market = await serverApi<MarketOverview>("market", "market/overview");
+
   return (
     <>
       <PageHeading

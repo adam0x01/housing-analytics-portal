@@ -4,8 +4,11 @@ import { EstimatorNavigation } from "@/components/estimator-navigation";
 import { ComparisonWorkspace } from "@/components/comparison-workspace";
 import { serverApi } from "@/lib/server-api";
 import type { HistoryPage } from "@/lib/types";
+
 export const metadata: Metadata = { title: "Compare properties" };
+
 export const dynamic = "force-dynamic";
+
 export default async function ComparePage({
   searchParams,
 }: {
@@ -19,6 +22,7 @@ export default async function ComparePage({
     "estimator",
     "estimates?page_size=100",
   );
+
   return (
     <>
       <PageHeading

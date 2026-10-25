@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -35,6 +36,7 @@ import {
 import { useComparison } from "@/components/providers";
 import { SidebarStatus, type DeploymentInfo } from "@/components/sidebar-status";
 import { cn } from "@/lib/utils";
+
 const navigation = [
   { label: "Overview", href: "/", icon: LayoutDashboard, group: "Workspace" },
   {
@@ -63,6 +65,7 @@ const navigation = [
     group: "Resources",
   },
 ];
+
 function Brand() {
   return (
     <Link
@@ -84,9 +87,11 @@ function Brand() {
     </Link>
   );
 }
+
 function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { ids } = useComparison();
+
   return (
     <nav className="mt-4 space-y-1" aria-label="Main navigation">
       {navigation.map((item, index) => (
@@ -127,7 +132,11 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
     </nav>
   );
 }
-export function AppShell({ children, deployment }: {
+
+export function AppShell({
+  children,
+  deployment
+}: {
   children: React.ReactNode;
   deployment: DeploymentInfo;
 }) {
@@ -136,6 +145,7 @@ export function AppShell({ children, deployment }: {
     navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
   const { setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <a

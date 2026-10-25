@@ -1,8 +1,11 @@
 "use client";
+
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fields, type EstimateForm } from "@/lib/property-schema";
+
+/** Shared field metadata keeps estimator and what-if forms consistent. */
 export function PropertyFields({
   register,
   errors,
@@ -19,6 +22,7 @@ export function PropertyFields({
       {fields.map((field) => {
         const error = errors.features?.[field.name];
         const id = `${prefix}-${field.name}`;
+
         return (
           <div
             key={field.name}

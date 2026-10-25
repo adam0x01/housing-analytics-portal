@@ -26,16 +26,21 @@ import {
   ErrorNotice,
   StatCard,
 } from "@/components/page-parts";
+
 export const dynamic = "force-dynamic";
+
 export default async function OverviewPage() {
+  // Independent panels remain usable when one application API is unavailable.
   const [marketResult, historyResult] = await Promise.allSettled([
     serverApi<MarketOverview>("market", "market/overview"),
     serverApi<HistoryPage>("estimator", "estimates?page_size=4"),
   ]);
+
   const market =
     marketResult.status === "fulfilled" ? marketResult.value : null;
   const history =
     historyResult.status === "fulfilled" ? historyResult.value : null;
+
   return (
     <div className="space-y-6">
       <h1 className="sr-only">Overview</h1>

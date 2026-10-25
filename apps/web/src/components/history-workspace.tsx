@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -19,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -43,19 +43,23 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorNotice } from "@/components/page-parts";
 
+/** Pages through persisted estimates while comparison selection stays shared. */
 export function HistoryWorkspace({ initial }: { initial: HistoryPage }) {
   const [history, setHistory] = useState(initial);
   const [detail, setDetail] = useState<Estimate | null>(null);
   const { ids, toggle, clear } = useComparison();
   const { run, pending, error } = useApiAction();
+
   async function changePage(page: number) {
     const result = await run((signal) =>
       api<HistoryPage>("estimator", `estimates?page=${page}&page_size=10`, {
         signal,
       }),
     );
+
     if (result) setHistory(result);
   }
+
   return (
     <div className="space-y-4">
       {error && <ErrorNotice message={error} />}
