@@ -1,0 +1,58 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    # Change both this branch and the deploy job guard if using another branch.
+    branches: [release]
+    paths:
+      - "apps/web/**"
+      - "services/**"
+      - "data/**"
+      - "deploy/fly/**"
+      - "scripts/**"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Finish a deployment before starting another, including the SQLite service.
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  model-checks:
+    uses: ./.github/workflows/model-api.yml
+  portal-checks:
+    uses: ./.github/workflows/portal.yml
+  deploy:
+    if: github.ref == 'refs/heads/release'
+    needs: [model-checks, portal-checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: production
+      url: https://${{ vars.FLY_APP_PREFIX }}-web.fly.dev
+    env:
+      FLY_APP_PREFIX: ${{ vars.FLY_APP_PREFIX }}
+      FLY_MODEL_TOKEN: ${{ secrets.FLY_MODEL_TOKEN }}
+      FLY_ESTIMATOR_TOKEN: ${{ secrets.FLY_ESTIMATOR_TOKEN }}
+      FLY_MARKET_TOKEN: ${{ secrets.FLY_MARKET_TOKEN }}
+      FLY_WEB_TOKEN: ${{ secrets.FLY_WEB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployment settings
+        shell: bash
+        run: |
+          for setting in FLY_APP_PREFIX FLY_MODEL_TOKEN FLY_ESTIMATOR_TOKEN FLY_MARKET_TOKEN FLY_WEB_TOKEN; do
+            if [[ -z "${!setting}" ]]; then
+              echo "::error::Configure $setting in repository Actions variables/secrets. See docs/deployment-fly.md."
+              exit 1
+            fi
+          done
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy and verify all four services
+        run: bash scripts/deploy-fly.sh

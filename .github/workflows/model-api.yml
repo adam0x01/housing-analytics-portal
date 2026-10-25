@@ -1,6 +1,7 @@
 name: Model API
 
 on:
+  workflow_call:
   push:
     paths:
       - "services/housing-model-api/**"
