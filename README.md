@@ -81,21 +81,61 @@ Docker runs a built Next.js application. Rebuild after source changes; use the [
 
 ## Architecture and data flow
 
-```mermaid
-flowchart LR
-  Browser[Browser] --> Web[Next.js portal]
-  Web --> Estimator[Python Estimator API]
-  Web --> Market[Java Market API]
-  Estimator --> Model[Housing Model API]
-  Market --> Model
-  Estimator --> History[(SQLite history)]
-  Dataset[Housing CSV] -->|Training during image build| Model
-  Dataset -->|Loaded at startup| Market
+```text
+                          +------------------------+
+                          | Browser (portal)       |
+                          +-----------+------------+
+                                      |
+                                      | Pages + same-origin API calls
+                                      v
+        +------------------------------------------------------------+
+        | web:3000 - Next.js UI + BFF                                |
+        | Server Components: initial data from application APIs      |
+        | Route Handlers: /api/estimator/* and /api/market/*         |
+        +-------+-------------------------------------------+--------+
+                |                                           |
+                v                                           v
++--------------------------------+          +--------------------------------+
+| estimator-api:8001             |          | market-api:8002                |
+| Python / FastAPI               |          | Java 21 / Spring Boot 3.4.4    |
+| Validation + saved estimates   |          | Aggregates + cache + exports   |
++-------+---------------+--------+          +-------+---------------+--------+
+        |               |                           |               |
+        v               |                           |               v
+ [SQLite history]       |                           |       [House prices CSV]
+ [named volume]         |                           |       [Loaded at startup]
+                        | predict                   | what-if (batch)
+                        +-------------+-------------+
+                                      |
+                                      v
+                    +------------------------------------+
+                    | housing-model-api:8000             |
+                    | Python / FastAPI / scikit-learn    |
+                    | Loaded regression artifact         |
+                    +------------------------------------+
+
+Local debug access is also enabled:
+Host / Swagger -> 127.0.0.1:8000, :8001, :8002 -> APIs directly
 ```
 
-Server Components load initial data from the configured application APIs. Browser interactions use same-origin Next.js `/api/estimator/...` and `/api/market/...` routes. Both application backends own their model integration; the browser does not connect to Docker-internal hostnames. A shared request hook handles pending/error state and cancels obsolete requests.
+Arrows show service calls or data access; responses return through the calling service. The estimator owns SQLite history. The market service reads its copy of the CSV and caches aggregates; only its what-if operation calls the model. Both application backends reuse the same prediction service.
 
 The model is evaluated with shuffled five-fold cross-validation using seed 42 and a mean-price baseline, then refitted on all labelled rows for serving. Training occurs during the model image build, not during prediction requests. The Java service caches aggregate responses for five minutes; it does not cache model predictions. See [architecture](docs/architecture-overview.md) and [model evaluation](docs/model-evaluation.md) for the decisions and limitations.
+
+### Next.js as the Backend for Frontend (BFF)
+
+Next.js serves the UI and acts as the portal's **Backend for Frontend**. There are two server-side request paths:
+
+- **Initial page rendering:** Server Components fetch data directly from `estimator-api` and `market-api` using server-side configuration.
+- **Browser interactions:** Client Components call same-origin `/api/estimator/...` and `/api/market/...` Route Handlers. Those handlers forward allowed requests to the appropriate application API and return its response, including CSV/PDF downloads.
+
+This gives the frontend one API origin and keeps Docker service addresses in server-side configuration. The BFF Route Handlers apply a path allowlist, reject forwarded request bodies larger than 128,000 bytes, enforce upstream timeouts, and provide consistent connection/timeout errors. Each application API remains responsible for its own input validation, business logic, model integration, and data access. A shared client hook handles pending/error state and cancels obsolete requests.
+
+### Current access boundary
+
+The BFF mediates normal portal traffic. The local demo also publishes **all three API ports on `127.0.0.1`** so reviewers can use Swagger and direct API requests. Local callers can therefore access `estimator-api`, `market-api`, and the model directly without passing through Next.js. These loopback bindings restrict access to the local host; they do not make the APIs exclusive to the BFF.
+
+Authentication, authorization, and service-to-service authentication are not implemented. A deployment that requires the BFF to control external API access would expose only the web entry point, keep application/model services on private networking, and add explicit access controls. The diagram and Compose configuration above describe the current local demonstration setup.
 
 ## Optional configuration
 
