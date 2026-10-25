@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS runtime-base
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DATABASE_PATH=/app/storage/estimates.sqlite
 COPY services/estimator-api/requirements.txt ./requirements.txt
@@ -14,3 +14,12 @@ EXPOSE 8001
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
     CMD python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8001/health', timeout=3)"
 CMD ["uvicorn", "estimator_api.main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+# Fly mounts a fresh volume owned by root. Drop privileges after preparing it.
+FROM runtime-base AS fly
+COPY scripts/fly-estimator-entrypoint.py /app/fly-estimator-entrypoint.py
+USER root
+ENTRYPOINT ["python", "/app/fly-estimator-entrypoint.py"]
+
+# Keep the default Compose image running as the original non-root user.
+FROM runtime-base AS runtime

@@ -1,6 +1,7 @@
 name: Portal and application APIs
 
 on:
+  workflow_call:
   push:
     paths: ["apps/web/**", "services/estimator-api/**", "services/market-api/**", "data/**", "docker-compose.yml", ".dockerignore", "scripts/**", ".github/workflows/portal.yml"]
   pull_request:
