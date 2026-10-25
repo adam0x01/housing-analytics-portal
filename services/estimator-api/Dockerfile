@@ -20,6 +20,7 @@ FROM runtime-base AS fly
 COPY scripts/fly-estimator-entrypoint.py /app/fly-estimator-entrypoint.py
 USER root
 ENTRYPOINT ["python", "/app/fly-estimator-entrypoint.py"]
+CMD ["uvicorn", "estimator_api.main:app", "--host", "0.0.0.0", "--port", "8001"]
 
 # Keep the default Compose image running as the original non-root user.
 FROM runtime-base AS runtime

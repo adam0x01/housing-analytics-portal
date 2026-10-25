@@ -88,6 +88,9 @@ Commit and push the deployment files and application changes to a development
 branch, then merge a pull request into `release`. Relevant release updates run
 both existing verification workflows,
 including the Docker Compose full-stack smoke check, before deploying.
+The stack check uses `deploy/fly/compose.test.yml` to start the Fly estimator
+image with its default command and a fresh root-owned volume, so it also covers
+the volume permission initialization and privilege drop.
 Changes limited to model code still run the whole stack verification. Manual
 workflow dispatch is also allowed, but deployment is restricted to the configured
 branch. Production deploys are serialized so they do not overlap. All four apps
