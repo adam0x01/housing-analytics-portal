@@ -39,12 +39,12 @@ Saved estimates persist in a SQLite volume; `docker compose down --volumes` dele
 
 ## Applications
 
-| Component | Features | Stack / development guide |
-| --- | --- | --- |
-| Model API | Single and batch predictions, coefficients, evaluation metrics, health | [Python 3.12, FastAPI, scikit-learn](services/housing-model-api/README.md) |
-| Value estimator | Validated seven-feature form, result table/chart, saved history, comparison of 2–4 properties | [Python, FastAPI, SQLite](services/estimator-api/README.md) |
-| Market analysis | Segment filters, interactive charts, sortable tables, what-if scenarios, CSV/PDF exports, cached aggregates | [Java 21, Spring Boot 3.4.4, Caffeine](services/market-api/README.md) |
-| Web portal | Shared navigation, server-rendered initial data, same-origin API proxy, responsive layouts, loading/error states, light/dark themes | [Next.js App Router, TypeScript, Tailwind, shadcn/ui](apps/web/README.md) |
+| Component | Folder | Features | Stack / development guide |
+| --- | --- | --- | --- |
+| Model API | [services/housing-model-api/](services/housing-model-api/) | Single and batch predictions, coefficients, evaluation metrics, health | [Python 3.12, FastAPI, scikit-learn](services/housing-model-api/README.md) |
+| Value estimator | [services/estimator-api/](services/estimator-api/) | Validated seven-feature form, result table/chart, saved history, comparison of 2–4 properties | [Python, FastAPI, SQLite](services/estimator-api/README.md) |
+| Market analysis | [services/market-api/](services/market-api/) | Segment filters, interactive charts, sortable tables, what-if scenarios, CSV/PDF exports, cached aggregates | [Java 21, Spring Boot 3.4.4, Caffeine](services/market-api/README.md) |
+| Web portal | [apps/web/](apps/web/) | Shared navigation, server-rendered initial data, same-origin API proxy, responsive layouts, loading/error states, light/dark themes | [Next.js App Router, TypeScript, Tailwind, shadcn/ui](apps/web/README.md) |
 
 To explore: save two estimates, compare them in history, filter the market dashboard and download a report, then change a reference property's features in the what-if view. Both application backends call the same model service.
 
