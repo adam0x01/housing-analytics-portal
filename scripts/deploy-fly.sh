@@ -8,6 +8,9 @@ if [[ ! "$FLY_APP_PREFIX" =~ ^[a-z][a-z0-9-]{0,39}$ ]] || [[ "$FLY_APP_PREFIX" =
   exit 1
 fi
 
+# Use the application release version in the sidebar, rather than the commit SHA.
+app_version="$(node -p "require('./apps/web/package.json').version")"
+
 # App-scoped tokens in CI; fall back to the local flyctl login outside CI.
 deploy() {
   local service="$1" token_variable="$2"
@@ -28,7 +31,7 @@ deploy market FLY_MARKET_TOKEN --flycast --no-public-ips \
 deploy web FLY_WEB_TOKEN \
   --env "ESTIMATOR_API_URL=http://${FLY_APP_PREFIX}-estimator.flycast" \
   --env "MARKET_API_URL=http://${FLY_APP_PREFIX}-market.flycast" \
-  --env "APP_VERSION=${GITHUB_SHA:-$(git rev-parse --short HEAD)}"
+  --env "APP_VERSION=${app_version}"
 
 web_url="https://${FLY_APP_PREFIX}-web.fly.dev"
 # Warm up the dependency chain before the existing read-only smoke check.

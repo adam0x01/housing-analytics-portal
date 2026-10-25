@@ -86,6 +86,10 @@ public BFF and runs the existing read-only integration smoke test. The URL is
 `https://<prefix>-web.fly.dev`. The model documentation link is hidden in cloud
 deployments because Swagger remains on the private backend.
 
+The sidebar displays the semantic version from `apps/web/package.json` (for
+example, `v0.1.0`). Update that version when preparing a new application release;
+the deployment script passes it to the web app as `APP_VERSION`.
+
 Commit and push the deployment files and application changes to a development
 branch, then merge a pull request into `release`. Relevant release updates run
 both existing verification workflows,
