@@ -17,7 +17,6 @@ dist/
 build/
 tmp/
 private/
-*.m4a
 *.joblib
 storage/
 *.sqlite
@@ -26,6 +25,3 @@ storage/
 *.tsbuildinfo
 playwright-report/
 test-results/
-
-# Personal interview preparation (kept local)
-/docs/interview-preparation.md
