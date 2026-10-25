@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Bar,
   BarChart,
@@ -14,6 +15,7 @@ import {
 } from "recharts";
 import { compact, number } from "@/lib/format";
 import type { MarketOverview, Property } from "@/lib/types";
+
 const tooltipStyle = {
   backgroundColor: "var(--popover)",
   color: "var(--popover-foreground)",
@@ -22,6 +24,7 @@ const tooltipStyle = {
   fontSize: "12px",
   boxShadow: "0 4px 16px #00000010",
 };
+
 export function PriceBars({
   data,
   height = 240,
@@ -71,6 +74,7 @@ export function PriceBars({
     </div>
   );
 }
+
 export function AreaPriceChart({ properties }: { properties: Property[] }) {
   return (
     <div
@@ -122,6 +126,7 @@ export function AreaPriceChart({ properties }: { properties: Property[] }) {
     </div>
   );
 }
+
 export function DistributionChart({
   data,
 }: {

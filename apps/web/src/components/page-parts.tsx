@@ -2,6 +2,7 @@ import { AlertCircle, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+
 export function PageHeading({
   eyebrow,
   title,
@@ -32,6 +33,7 @@ export function PageHeading({
     </div>
   );
 }
+
 export function StatCard({
   label,
   value,
@@ -60,6 +62,7 @@ export function StatCard({
     </Card>
   );
 }
+
 export function ErrorNotice({
   message,
   title = "Unable to complete this request",
@@ -75,6 +78,7 @@ export function ErrorNotice({
     </Alert>
   );
 }
+
 export function EmptyState({
   icon: Icon = ArrowUpRight,
   title,
@@ -99,6 +103,7 @@ export function EmptyState({
     </div>
   );
 }
+
 export function PageSkeleton() {
   return (
     <div role="status" aria-label="Loading workspace" className="space-y-7">

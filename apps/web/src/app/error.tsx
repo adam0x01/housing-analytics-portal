@@ -1,8 +1,10 @@
 "use client";
+
 import { RefreshCw, ServerCrash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeading } from "@/components/page-parts";
+
 export default function ErrorPage({
   retry,
 }: {

@@ -6,13 +6,18 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
+/** Normalizes Java detail strings and FastAPI validation-error lists for the UI. */
 export function errorMessage(
   body: unknown,
   fallback = "The request could not be completed.",
 ): string {
   if (!body || typeof body !== "object") return fallback;
+
   const detail = (body as { detail?: unknown }).detail;
+
   if (typeof detail === "string") return detail;
+
   if (Array.isArray(detail))
     return (
       detail
@@ -23,8 +28,11 @@ export function errorMessage(
         )
         .join(". ") || fallback
     );
+
   return fallback;
 }
+
+/** Browser requests use the same-origin BFF, keeping service addresses server-side. */
 export async function api<T>(
   service: "estimator" | "market",
   path: string,
@@ -35,6 +43,7 @@ export async function api<T>(
     headers: { "Content-Type": "application/json", ...options.headers },
     cache: "no-store",
   });
+
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new ApiError(
@@ -45,12 +54,16 @@ export async function api<T>(
       response.status,
     );
   }
+
   return response.json() as Promise<T>;
 }
+
 export function queryString(filters: Record<string, string | undefined>) {
   const query = new URLSearchParams();
+
   for (const [key, value] of Object.entries(filters))
     if (value != null && value.trim() !== "" && value !== "all")
       query.set(key, value);
+
   return query.toString();
 }

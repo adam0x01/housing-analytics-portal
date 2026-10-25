@@ -7,13 +7,17 @@ import { EstimatorNavigation } from "@/components/estimator-navigation";
 import { HistoryWorkspace } from "@/components/history-workspace";
 import { serverApi } from "@/lib/server-api";
 import type { HistoryPage } from "@/lib/types";
+
 export const metadata: Metadata = { title: "Estimate history" };
+
 export const dynamic = "force-dynamic";
+
 export default async function HistoryPage() {
   const history = await serverApi<HistoryPage>(
     "estimator",
     "estimates?page=1&page_size=10",
   );
+
   return (
     <>
       <PageHeading

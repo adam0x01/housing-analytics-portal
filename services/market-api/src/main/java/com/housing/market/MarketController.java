@@ -13,6 +13,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+/** Exposes market workflows while analysis, model calls, and rendering stay in separate services. */
 @RestController
 public class MarketController {
   private final MarketService market;

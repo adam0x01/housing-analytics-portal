@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -45,6 +46,7 @@ import {
 import type { Estimate, ModelInfo } from "@/lib/types";
 import { date, number } from "@/lib/format";
 
+/** Keeps editable form values separate from the last successfully saved estimate. */
 export function EstimatorWorkspace({
   model,
   medianPrice,
@@ -57,13 +59,16 @@ export function EstimatorWorkspace({
     defaultValues: { name: "", features: sampleFeatures },
   });
   const values = useWatch({ control: form.control });
+
   const [result, setResult] = useState<Estimate | null>(null);
   const { run, pending, error, clearError } = useApiAction();
   const { ids, toggle } = useComparison();
   const router = useRouter();
+
   const changed =
     result &&
     JSON.stringify(values.features) !== JSON.stringify(result.features);
+
   async function submit(data: EstimateForm) {
     setResult(null);
     const estimate = await run((signal) =>
@@ -73,12 +78,15 @@ export function EstimatorWorkspace({
         signal,
       }),
     );
+
     if (estimate) {
       setResult(estimate);
       toast.success("Estimate saved to your history");
+      // Refresh server-rendered history summaries without clearing the local result.
       router.refresh();
     }
   }
+
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[1.2fr_1fr]">
       <Card className="gap-0 shadow-none">

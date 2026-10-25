@@ -16,6 +16,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.*;
 import org.springframework.stereotype.Component;
 
+/** Renders an already-filtered overview so CSV and PDF exports use the same data. */
 @Component
 public class MarketExport {
   public String csv(Overview overview) throws IOException {
@@ -49,6 +50,7 @@ public class MarketExport {
       var normal = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
       var bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
       int perPage = 28;
+      // Keep a header/summary page even when the selected segment contains no properties.
       int pages = Math.max(1, (overview.properties().size() + perPage - 1) / perPage);
       for (int pageIndex = 0; pageIndex < pages; pageIndex++) {
         var page =
@@ -107,6 +109,8 @@ public class MarketExport {
                   + label(overview.summary().medianPrice())
                   + " | Mean: "
                   + label(overview.summary().meanPrice()));
+
+          // Shared x-coordinates align each page's headers with every property row.
           float[] columns = {40, 86, 168, 226, 285, 354, 445, 558, 675};
           String[] headers = {
             "ID",

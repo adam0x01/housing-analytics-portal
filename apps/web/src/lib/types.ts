@@ -1,3 +1,4 @@
+// HTTP payloads retain backend snake_case names rather than remapping at each call.
 export type PropertyFeatures = {
   square_footage: number;
   bedrooms: number;
@@ -7,7 +8,9 @@ export type PropertyFeatures = {
   distance_to_city_center: number;
   school_rating: number;
 };
+
 export type Property = PropertyFeatures & { id: number; price: number };
+
 export type Estimate = {
   id: string;
   name: string;
@@ -18,12 +21,15 @@ export type Estimate = {
   model_version: string;
   price_unit: string;
 };
+
 export type HistoryPage = {
   items: Estimate[];
   total: number;
   page: number;
   page_size: number;
 };
+
+// Query keys match the Java API; strings preserve unsubmitted form input values.
 export type MarketFilters = {
   bedrooms?: string;
   minPrice?: string;
@@ -32,6 +38,7 @@ export type MarketFilters = {
   maxArea?: string;
   minSchoolRating?: string;
 };
+
 export type MarketOverview = {
   summary: {
     property_count: number;
@@ -54,6 +61,7 @@ export type MarketOverview = {
   properties: Property[];
   dataset_version: string;
 };
+
 export type ModelInfo = {
   model_version: string;
   algorithm: string;
@@ -75,6 +83,7 @@ export type ModelInfo = {
   limitations: string[];
   library_versions: Record<string, string>;
 };
+
 export type WhatIfResult = {
   baseline: { price: number; warnings: string[] };
   scenario: { price: number; warnings: string[] };

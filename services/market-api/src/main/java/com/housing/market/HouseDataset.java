@@ -17,6 +17,7 @@ import org.apache.commons.csv.CSVParser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/** Validates one immutable dataset snapshot shared by analysis and exports. */
 @Component
 public class HouseDataset {
   public static final List<String> COLUMNS =
@@ -36,6 +37,7 @@ public class HouseDataset {
   public HouseDataset(@Value("${market.dataset-path}") String path)
       throws IOException, NoSuchAlgorithmException {
     byte[] bytes = Files.readAllBytes(Path.of(path));
+    // Match the model's fingerprint using the original bytes, including the CSV BOM.
     version = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     String content =
         new String(bytes, java.nio.charset.StandardCharsets.UTF_8).replaceFirst("^\uFEFF", "");

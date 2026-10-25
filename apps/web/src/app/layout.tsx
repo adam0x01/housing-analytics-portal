@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   description:
     "Property value estimation, comparison, and market analysis in one workspace.",
 };
+
 export default function RootLayout({
   children,
 }: {

@@ -1,8 +1,8 @@
 # Property Market Analysis API
 
-Java **21** and Spring Boot **3.4.4** service for housing market analysis. It reads the versioned housing CSV, calculates segment statistics, caches aggregate responses, exports filtered data, and calls the shared model service for what-if scenarios.
+Java **21** / Spring Boot **3.4.4**. Loads the housing CSV, computes segment statistics, caches overviews, exports CSV/PDF, and calls the shared model for what-if scenarios.
 
-## Run with Docker Compose
+## Run
 
 From the repository root:
 
@@ -10,17 +10,11 @@ From the repository root:
 docker compose up --build -d --wait market-api
 ```
 
-Health: [localhost:8002/health](http://localhost:8002/health).
+Open [Swagger](http://localhost:8002/docs), [OpenAPI](http://localhost:8002/v3/api-docs), or [health](http://localhost:8002/health). Compose starts the model dependency.
 
-Swagger UI: [localhost:8002/docs](http://localhost:8002/docs). The UI redirects to `/swagger-ui/index.html` and supports trying the market endpoints, segment filters, what-if requests, and downloads. The generated OpenAPI JSON is available at [localhost:8002/v3/api-docs](http://localhost:8002/v3/api-docs).
+## Native development
 
-Swagger is provided by `springdoc-openapi-starter-webmvc-ui` **2.8.14**, from the [2.8.x line compatible with Spring Boot 3.4.x](https://springdoc.org/v2/#_what_is_the_compatibility_matrix_of_springdoc_openapi_with_spring_boot). This patch avoids a [later Swagger resource-path regression on Spring Boot 3.4.4](https://github.com/springdoc/springdoc-openapi/issues/3210). If the service is already running, rebuild/restart it to load the dependency. Native startup enables the same documentation endpoints.
-
-Compose also starts the model service used by what-if requests. Stop the market service with `docker compose stop market-api`; see the [project setup guide](../../README.md) for the complete stack.
-
-## Run directly with Maven
-
-Use **JDK 21** and the checked-in `mvnw` script to run the Java API directly on your machine. The [Maven Wrapper](https://maven.apache.org/tools/wrapper/index.html) downloads the pinned Maven **3.9.11** on first use, so a separate Maven installation is unnecessary. First use also downloads dependencies and needs internet access. The wrapper does not install the JDK.
+Requires **JDK 21**. The checked-in Maven wrapper downloads Maven on first use; it does not install Java.
 
 ### Select JDK 21 on macOS
 
@@ -30,13 +24,13 @@ List installed JDKs:
 /usr/libexec/java_home -V
 ```
 
-If JDK 21 is missing, install it once using the official [Homebrew Temurin 21 cask](https://formulae.brew.sh/cask/temurin@21):
+If JDK 21 is missing, install it with Homebrew:
 
 ```bash
 brew install --cask temurin@21
 ```
 
-Select JDK 21 in the terminal where you will run Maven:
+Select it in the terminal where you will run Maven:
 
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
@@ -44,183 +38,70 @@ export PATH="$JAVA_HOME/bin:$PATH"
 java -version
 ```
 
-The output should show Java 21. These exports affect the current terminal; repeat them in a new terminal if its default Java is another version. JDK 17 cannot compile this project's Java 21 target.
+### Start the API
 
-### Start and stop the API
-
-From the repository root, enter the Java sub-project and check which Java Maven uses:
+If the Docker market service is running, stop it from the repository root with `docker compose stop market-api`. For native startup, run from the repository root:
 
 ```bash
 cd services/market-api
 ./mvnw -v
-```
-
-Confirm that Maven also reports Java 21. Run all subsequent Maven and JAR commands from **`services/market-api/`**. This keeps the default CSV path, `../../data/house-prices.csv`, pointing to the supplied dataset.
-
-If the Docker market service is running, free port 8002 with `docker compose stop market-api` **from the repository root**, or choose the alternative port below. Keep the model API available at `http://127.0.0.1:8000` for what-if predictions; see its [native/Docker instructions](../housing-model-api/README.md). Dataset analysis, health checks, and exports work without the model.
-
-From `services/market-api/`, compile and launch using the [Spring Boot Maven plugin](https://docs.spring.io/spring-boot/3.4/maven-plugin/run.html):
-
-```bash
 ./mvnw spring-boot:run
 ```
 
-The API runs in the foreground and logs appear in that terminal. From another terminal, check:
+Both `java -version` and `./mvnw -v` should report Java 21. Keep port 8002 free. Stop with Ctrl+C; restart after Java source changes. The default CSV path assumes Maven is run from `services/market-api/`.
+
+From another terminal, check the running API:
 
 ```bash
-curl --fail http://127.0.0.1:8002/health
-curl --fail http://127.0.0.1:8002/market/overview
+curl --fail http://localhost:8002/health
+curl --fail http://localhost:8002/market/overview
 ```
 
-Stop the API with **Ctrl+C** in the Maven terminal. After code changes, stop the process, then rebuild and run again:
-
-```bash
-./mvnw clean spring-boot:run
-```
-
-Java changes do not automatically reload in this project. Repeat any custom environment settings when restarting.
-
-### Configure the model, dataset, and port
-
-Set environment variables in the terminal or inline for one invocation:
-
-```bash
-MODEL_API_URL=http://127.0.0.1:8000 \
-MODEL_TIMEOUT_MS=10000 \
-DATASET_PATH=../../data/house-prices.csv \
-PORT=8002 \
-./mvnw spring-boot:run
-```
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `MODEL_API_URL` | `http://127.0.0.1:8000` | Model API used by what-if requests |
-| `MODEL_TIMEOUT_MS` | `10000` | Model connection/read timeout, in milliseconds |
-| `DATASET_PATH` | `../../data/house-prices.csv` | CSV file read from disk on startup |
-| `PORT` | `8002` | Java HTTP server port |
-
-For example, use another port without stopping the Docker market service:
-
-```bash
-PORT=8003 ./mvnw spring-boot:run
-```
-
-Then use `http://127.0.0.1:8003/health` and change any caller's market API URL accordingly. The Java application does not automatically read the repository's `.env` file; pass these environment variables explicitly.
-
-### Build and run an executable JAR
-
-From `services/market-api/`, run checks/tests and build the JAR, then launch it:
-
-```bash
-./mvnw clean verify
-java -jar target/market-api-0.1.0.jar
-```
-
-Stop the JAR with **Ctrl+C**. The same environment variables apply. The CSV remains an external file, so keep it at the configured path when running the JAR. After Java code changes, rebuild the JAR and restart it.
-
-### Common Maven commands
-
-Run the command you need from `services/market-api/` with JDK 21 selected:
-
-| Command | Purpose |
+| Variable | Default |
 | --- | --- |
-| `./mvnw -v` | Show the Maven and Java versions being used |
-| `./mvnw clean` | Remove generated files in `target/` |
-| `./mvnw clean compile` | Compile the application |
-| `./mvnw test` | Run the automated tests |
-| `./mvnw clean verify` | Run checks/tests and build the executable JAR |
-| `./mvnw clean package -DskipTests` | Build the JAR while skipping test execution |
-| `./mvnw spring-boot:run` | Compile and run the API in the foreground |
+| `MODEL_API_URL` | `http://127.0.0.1:8000` |
+| `MODEL_TIMEOUT_MS` | `10000` |
+| `DATASET_PATH` | `../../data/house-prices.csv` |
+| `PORT` | `8002` |
 
-Tests use the supplied CSV and a local HTTP model stub; they do not need a running model API.
+Pass configuration as environment variables; Java does not load the root `.env`. Dataset analysis and exports work without the model, while what-if requests need the [model API](../housing-model-api/README.md) running.
 
-### Connect the portal to the native Java API
-
-If Next.js also runs natively, set `MARKET_API_URL=http://127.0.0.1:8002` in `apps/web/.env.local` and restart its process.
-
-If Next.js runs in Docker Desktop on macOS, use [`host.docker.internal`](https://docs.docker.com/desktop/features/networking/networking-how-tos/) to reach the host. From the repository root, recreate only the web container with that address:
+For a fully native portal, use `MARKET_API_URL=http://127.0.0.1:8002` in `apps/web/.env.local`. A web container on Docker Desktop reaches the host at `http://host.docker.internal:8002`; recreate only that container from the repository root:
 
 ```bash
-MARKET_API_URL=http://host.docker.internal:8002 \
-docker compose up -d --no-deps --wait web
+MARKET_API_URL=http://host.docker.internal:8002 docker compose up -d --no-deps --wait web
 ```
 
-`--no-deps` prevents Compose from starting the Docker market container again and competing for port 8002. Keep the other APIs running. Substitute port 8003 if you chose it above.
-
-When returning to the usual Docker setup, stop the native Java process, restore the web setting to `http://market-api:8002`, and recreate the market/web containers using the project setup guide.
-
-### Troubleshooting
-
-| Symptom | Check |
-| --- | --- |
-| `release version 21 not supported` or `invalid target release: 21` | Select JDK 21 with `JAVA_HOME`; check `java -version` and `./mvnw -v` |
-| `Permission denied: ./mvnw` | From the service directory, run `chmod +x mvnw`, then retry |
-| Port 8002 already in use | Stop the existing server, or use `PORT=8003 ./mvnw spring-boot:run` |
-| CSV file not found | Run from `services/market-api/`, or set `DATASET_PATH` to the CSV's absolute path |
-| What-if requests return 503 | Start the model API and check `MODEL_API_URL`; market `/health` checks the dataset, not the model connection |
+Use `PORT=8003 ./mvnw spring-boot:run` if port 8002 is occupied, and update the caller's market API URL to match.
 
 ## HTTP contract
 
 | Method | Endpoint | Behaviour |
 | --- | --- | --- |
-| GET | `/health` | Dataset readiness, record count, and dataset fingerprint |
-| GET | `/market/overview` | Filtered properties, statistics, bedroom segments, and fixed price bands |
-| POST | `/market/what-if` | Evaluate reference/scenario together using the model's batch endpoint |
-| GET | `/market/export.csv` | Download all properties matching segment filters |
-| GET | `/market/export.pdf` | Download a paginated report with matching data, filters, and provenance |
+| GET | `/health` | Dataset readiness, row count, and fingerprint |
+| GET | `/market/overview` | Filtered properties, statistics, bedroom segments, price bands |
+| POST | `/market/what-if` | Accept `{baseline, scenario}` feature objects; evaluate in one model batch |
+| GET | `/market/export.csv` | Download properties matching segment filters |
+| GET | `/market/export.pdf` | Paginated report with filters and dataset provenance |
 
-Overview and exports accept the same query parameters: `bedrooms`, `minPrice`, `maxPrice`, `minArea`, `maxArea`, and `minSchoolRating`. Bounds are inclusive; absent parameters apply no constraint. Invalid numbers, negative bounds, or inverted ranges return 422. For example:
-
-```bash
-curl 'http://localhost:8002/market/overview?bedrooms=3&minPrice=200000'
-curl 'http://localhost:8002/market/export.csv?bedrooms=3' -o market.csv
-```
-
-JSON responses and feature payloads use `snake_case`. Query parameters use the camel-case names listed above.
-
-What-if requests provide `baseline` and `scenario` objects with the same seven fields as the [model API](../housing-model-api/README.md#api-contract). For example, to compare two bathroom counts while keeping other features fixed:
+Overview and exports accept `bedrooms`, `minPrice`, `maxPrice`, `minArea`, `maxArea`, and `minSchoolRating`. Bounds are inclusive. JSON bodies use `snake_case`; query parameters use the names above.
 
 ```bash
-curl --fail --json @- http://localhost:8002/market/what-if <<'JSON'
-{
-  "baseline": {
-    "square_footage": 1550,
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "year_built": 1997,
-    "lot_size": 6800,
-    "distance_to_city_center": 4.1,
-    "school_rating": 7.6
-  },
-  "scenario": {
-    "square_footage": 1550,
-    "bedrooms": 3,
-    "bathrooms": 2.5,
-    "year_built": 1997,
-    "lot_size": 6800,
-    "distance_to_city_center": 4.1,
-    "school_rating": 7.6
-  }
-}
-JSON
+curl --fail 'http://localhost:8002/market/overview?bedrooms=3&minPrice=200000'
+curl --fail 'http://localhost:8002/market/export.csv?bedrooms=3' -o market.csv
 ```
 
-Both predictions are produced by one model batch request. The response includes `baseline`, `scenario`, absolute `change`, `change_percent`, model version, price units, and warnings. The percentage is unavailable when the reference prediction is zero. Reference predictions are model estimates, distinct from observed dataset prices.
+What-if features follow the [model contract](../housing-model-api/README.md#api-contract). Results include both predictions, absolute/percentage change, warnings, and model version. The percentage is null for a zero reference prediction. Observed prices remain distinct from model estimates.
 
-## Data, caching, and exports
+## Behaviour and verification
 
-The CSV is read and validated once on startup, including BOM, exact columns, numeric values, and unique IDs. Missing/corrupt data fails startup. Its SHA-256 matches the model's dataset fingerprint. The dataset is immutable for a process lifetime. Restart a native process after changing its CSV; rebuild the Docker image when changing the CSV copied into it.
+Caffeine caches equivalent overview filters for five minutes, up to 128 entries; predictions are not cached. The dataset is validated and immutable until restart (rebuild when changing Docker's copied CSV). Empty segments return null price statistics. Exports apply segment filters; browser table search/sort does not alter them.
 
-Caffeine caches equivalent overview filter records, with a maximum of 128 entries and a five-minute expiry. It avoids recomputing aggregates; the cache is local to the service and is discarded on restart. The source cannot change beneath cached results. Model predictions are not cached. Dataset-only analysis and exports remain available if model serving stops.
-
-Empty segments return zero records and null summary metrics, rather than misleading zero prices. CSV uses standard escaping and the original nine columns. PDFBox produces landscape A4 tables with repeated page headers and a Hong Kong time generation stamp. Exports honour segment filters. Browser-only table searching/sorting does not change the export set; the UI explains this.
-
-Model timeouts return 504, connection failures return 503, and invalid model responses return 502. Numeric strings, missing features, and unexpected JSON fields are rejected. Currency, distance units, lot-size units, and rating scale are unspecified in the source, so exports retain source units. No sale dates or geography are present; the service does not invent time trends or regional analysis.
-
-## Tests
+Invalid input returns 422, model timeouts 504, unavailable models 503, and malformed model responses 502. Currency and unspecified source units are preserved.
 
 ```bash
 ./mvnw verify
+java -jar target/market-api-0.1.0.jar
 ```
 
-Tests load the actual dataset and use a local HTTP model stub. They cover filtered/empty results, cache reuse, invalid requests, batch request/response mapping, scenario deltas, CSV filtering, readable multipage PDF output, and the Swagger/OpenAPI contract. Docker runs these tests as part of its build.
+Tests use the real CSV and a local model stub, covering aggregates, filters, cache reuse, validation, batch mapping, exports, and Swagger. A running model is not needed for tests.

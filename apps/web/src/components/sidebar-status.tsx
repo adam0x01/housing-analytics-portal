@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export type DeploymentInfo = { environment: string; version: string };
+
 type BrowserDetails = {
   userAgent: string;
   viewport: string;
@@ -28,7 +29,9 @@ export function SidebarStatus({ environment, version }: DeploymentInfo) {
 
   function onOpenChange(open: boolean) {
     setCopyStatus("idle");
+
     if (open) {
+      // Read browser-only values on demand; server rendering never accesses window.
       setDetails({
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth} × ${window.innerHeight}`,

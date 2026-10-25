@@ -1,3 +1,5 @@
+"""SQLite persistence for saved estimates, independent of model serving."""
+
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -9,10 +11,13 @@ from estimator_api.schema import Estimate, EstimateRequest, HistoryPage, ModelRe
 
 
 class EstimateStore:
+    """Use a short-lived connection per operation so request threads share no connection state."""
+
     def __init__(self, path: Path):
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as connection:
+            # WAL lets readers continue while a request writes a new estimate.
             connection.execute("PRAGMA journal_mode=WAL")
             connection.execute(
                 "CREATE TABLE IF NOT EXISTS estimates ("
@@ -26,6 +31,7 @@ class EstimateStore:
 
     @contextmanager
     def connection(self):
+        """Commit on success, roll back on failure, and always release the connection."""
         connection = sqlite3.connect(self.path, timeout=5)
         connection.row_factory = sqlite3.Row
         try:
@@ -42,6 +48,7 @@ class EstimateStore:
         return Estimate.model_validate(values)
 
     def create(self, request: EstimateRequest, result: ModelResponse) -> Estimate:
+        """Store the prediction snapshot so later model changes cannot rewrite history."""
         prediction = result.predictions[0]
         estimate = Estimate(
             id=str(uuid4()),

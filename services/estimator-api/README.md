@@ -1,8 +1,6 @@
 # Property Value Estimator API
 
-Python 3.12+ and FastAPI application backend. Validated submissions call the separate housing model container. Successful predictions are saved with their inputs, model version, warnings, and creation time in SQLite.
-
-## Run
+Python 3.12+ / FastAPI backend. Validates property inputs, calls the separate model service, and saves successful predictions with their inputs, warnings, timestamps, and model versions in SQLite.
 
 From the repository root:
 
@@ -10,13 +8,27 @@ From the repository root:
 docker compose up --build -d --wait estimator-api
 ```
 
-Swagger: [localhost:8001/docs](http://localhost:8001/docs).
+Compose starts the model dependency. Open [Swagger](http://localhost:8001/docs).
 
-Compose also starts the required model service. Stop the estimator with `docker compose stop estimator-api`; see the [project setup guide](../../README.md) for the complete stack.
+## HTTP contract
 
-For native development, stop any Docker estimator container with `docker compose stop estimator-api` from the repository root to free port 8001. Keep the model service available, then run from this directory:
+| Method | Endpoint | Behaviour |
+| --- | --- | --- |
+| GET | `/health` | Check local storage |
+| GET | `/model-info` | Forward model metadata |
+| POST | `/estimates` | Accept `{name, features}`, predict and save; returns 201 |
+| GET | `/estimates?page=1&page_size=10` | Newest-first history; page size ≤ 100 |
+| GET | `/estimates/{uuid}` | Retrieve a saved estimate |
+| POST | `/estimates/compare` | Accept `{ids: [...]}` with 2–4 distinct saved UUIDs; preserve order |
+
+`features` follows the [model contract](../housing-model-api/README.md#api-contract). Invalid inputs return 422; upstream timeouts 504, unavailable services 503, and malformed prediction responses 502. Failed predictions never create history records.
+
+## Native development
+
+Keep the [model API](../housing-model-api/README.md) running and port 8001 free. Stop a running Docker estimator with `docker compose stop estimator-api`. For native startup, run from the repository root:
 
 ```bash
+cd services/estimator-api
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
@@ -25,46 +37,16 @@ cp -n .env.example .env
 uvicorn estimator_api.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-Start the model separately. Configure `MODEL_API_URL`, `MODEL_TIMEOUT_SECONDS` (default 10), and `DATABASE_PATH` (default `storage/estimates.sqlite`) in the environment or service-local `.env`.
+Open [Swagger](http://localhost:8001/docs); stop with Ctrl+C.
 
-## HTTP contract
+Configuration: `MODEL_API_URL` (default `http://127.0.0.1:8000`), `MODEL_TIMEOUT_SECONDS` (10), and `DATABASE_PATH` (`storage/estimates.sqlite`). Service-local `.env` values are supported.
 
-| Method | Endpoint | Behaviour |
-| --- | --- | --- |
-| GET | `/health` | Verify local storage is readable |
-| GET | `/model-info` | Retrieve model metadata from the model service |
-| POST | `/estimates` | Predict and persist an estimate; returns 201 |
-| GET | `/estimates?page=1&page_size=10` | Newest-first history, total count, pagination; maximum page size 100 |
-| GET | `/estimates/{uuid}` | Retrieve a saved estimate, or 404 |
-| POST | `/estimates/compare` | Retrieve 2–4 distinct estimates in requested order |
+Compose persists history in the `estimator-data` volume across restarts/rebuilds. `docker compose down --volumes` deletes it. This is one shared workspace without user accounts; the deployed SQLite service runs as a single instance.
 
-Example estimate request:
-
-```json
-{
-  "name": "Property A",
-  "features": {
-    "square_footage": 1550, "bedrooms": 3, "bathrooms": 2,
-    "year_built": 1997, "lot_size": 6800,
-    "distance_to_city_center": 4.1, "school_rating": 7.6
-  }
-}
-```
-
-Comparison request: `{"ids": ["first-saved-uuid", "second-saved-uuid"]}`. UUIDs must exist, be distinct, and number between two and four.
-
-The seven-feature schema matches the model contract, including fractional bathrooms and non-finite-value rejection. Invalid input returns 422. Upstream timeouts return 504, unavailable services return 503, and invalid upstream responses return 502. Failed predictions do not create history records. SQLite operations use parameterised statements and a separate connection per operation.
-
-## Persistence and scope
-
-Compose stores the database in the `estimator-data` named volume, so ordinary container rebuilds/restarts preserve history. `docker compose down` preserves this volume; adding `--volumes` deletes it. Native database files are ignored by Git.
-
-History belongs to one shared workspace; user accounts and record ownership are not implemented. SQLite provides persistence with no separate database server. Private per-user history requires authentication and ownership checks, and multiple service instances would need a shared database and migration strategy.
-
-## Tests
+## Verify
 
 ```bash
+ruff check .
+ruff format --check .
 pytest -q
 ```
-
-Tests exercise forwarding, persistence across application restarts, pagination, comparison order, validation, upstream failures, and the rule that failures never save an estimate.

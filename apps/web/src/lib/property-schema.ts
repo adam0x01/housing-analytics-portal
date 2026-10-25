@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+// Match the model API's numeric constraints; input step attributes are only hints.
 export const featuresSchema = z.object({
   square_footage: z
     .number({ error: "Enter a valid floor area" })
@@ -27,11 +29,15 @@ export const featuresSchema = z.object({
     .finite()
     .min(0),
 });
+
 export const estimateSchema = z.object({
   name: z.string().trim().max(80, "Use 80 characters or fewer"),
   features: featuresSchema,
 });
+
 export type EstimateForm = z.infer<typeof estimateSchema>;
+
+// The first supplied prediction sample also serves as the estimator's initial values.
 export const sampleFeatures = {
   square_footage: 1550,
   bedrooms: 3,
@@ -41,6 +47,7 @@ export const sampleFeatures = {
   distance_to_city_center: 4.1,
   school_rating: 7.6,
 };
+
 export const fields = [
   {
     name: "square_footage",

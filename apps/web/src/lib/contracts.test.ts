@@ -14,6 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
+
 describe("property contract", () => {
   it("accepts all supplied features, fractional bathrooms, and an optional name", () => {
     expect(
@@ -36,6 +37,7 @@ describe("property contract", () => {
     expect(featuresSchema.safeParse(features).success).toBe(false);
   });
 });
+
 describe("API configuration and error presentation", () => {
   it("renders calendar years without numeric grouping", () => {
     expect(featureNumber("year_built", 2001)).toBe("2001");
@@ -65,6 +67,7 @@ describe("API configuration and error presentation", () => {
     expect(apiConfig).toThrow();
   });
 });
+
 describe("same-origin backend routes", () => {
   it("forwards requests to the configured estimator URL", async () => {
     vi.stubEnv("ESTIMATOR_API_URL", "http://estimator.internal:9001/custom");

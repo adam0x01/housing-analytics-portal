@@ -1,3 +1,5 @@
+"""Public estimator payloads and the model response contract it accepts."""
+
 from typing import Annotated
 from uuid import UUID
 
