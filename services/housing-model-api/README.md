@@ -2,21 +2,79 @@
 
 Housing price prediction with Python 3.12+, FastAPI, and scikit-learn ordinary least-squares regression. The service supports single and batch inference and runs independently in Docker.
 
-## Run with Docker
+## Run with Docker (without Compose)
 
-From the repository root, with Docker running:
+Start Docker Desktop. Run every Docker command below from the **repository root**, the directory containing `apps/`, `services/`, and `data/`. The final `.` in `docker build` is that directory: the Dockerfile copies both service code and the shared CSV from it.
+
+The model has no upstream service dependency. Start it first when running the complete portal, followed by the [estimator](../estimator-api/README.md#run-with-docker-without-compose), [market API](../market-api/README.md#run-with-docker-without-compose), and [web app](../../apps/web/README.md#run-with-docker-without-compose).
+
+Before starting, make sure host port 8000 is free. If an earlier container, including a Compose-managed one, uses that port, find its name with `docker ps` and stop it with `docker stop CONTAINER_NAME`. Replace `CONTAINER_NAME` with its actual name.
+
+### Build and start
+
+Create the shared network if it does not already exist, then build the image:
 
 ```bash
-docker compose up --build -d --wait housing-model-api
+docker network inspect housing-analytics-net >/dev/null 2>&1 || docker network create housing-analytics-net
+docker build -f services/housing-model-api/Dockerfile -t housing-model-api:local .
 ```
 
-Open [Swagger UI](http://localhost:8000/docs). [OpenAPI JSON](http://localhost:8000/openapi.json) and [health](http://localhost:8000/health) are available on the same port. The image trains from the labelled CSV during its build and loads that artifact on startup. Port 8000 is bound to loopback for local access.
+Start a new container:
 
-Stop this service with `docker compose stop housing-model-api` from the repository root. See the [project setup guide](../../README.md) to start or stop the complete stack.
+```bash
+docker run -d \
+  --name housing-model-api \
+  --network housing-analytics-net \
+  --init \
+  --read-only \
+  --tmpfs /tmp \
+  -p 127.0.0.1:8000:8000 \
+  housing-model-api:local
+```
+
+The image installs Python 3.12 dependencies and trains the model from the labelled CSV during its build. Startup loads that saved artifact. No host Python installation or model-artifact volume is required.
+
+`-d` runs the server in the background; it does not wait for readiness. Check until the container reports `healthy`, then verify its endpoint:
+
+```bash
+docker inspect --format '{{.State.Health.Status}}' housing-model-api
+curl --fail http://127.0.0.1:8000/health
+```
+
+Open [Swagger UI](http://127.0.0.1:8000/docs) or [OpenAPI JSON](http://127.0.0.1:8000/openapi.json). Other containers on the shared network reach this service at `http://housing-model-api:8000`.
+
+### Stop, start again, and view logs
+
+Run the command you need:
+
+```bash
+# Stop the server, keeping its container.
+docker stop housing-model-api
+
+# Start the existing container again without rebuilding.
+docker start housing-model-api
+
+# Follow logs; Ctrl+C exits the log viewer and leaves the server running.
+docker logs -f housing-model-api
+```
+
+### Apply code or training-data changes
+
+Rebuild the image, then stop and remove the old container:
+
+```bash
+docker build -f services/housing-model-api/Dockerfile -t housing-model-api:local .
+docker stop housing-model-api
+docker rm housing-model-api
+```
+
+Repeat the `docker run` command above to create a container from the new image. `docker start` and `docker restart` reuse the existing container and do not apply a rebuilt image. Rebuilding also retrains the model from the current CSV.
+
+If `housing-model-api` already exists and only needs starting, use `docker start housing-model-api` instead of another `docker run`. Remove the stopped container before reusing its name to create a replacement.
 
 ## Run locally
 
-Use Python 3.12 or newer. If the Docker model container is running, stop it first with `docker compose stop housing-model-api` from the repository root to free port 8000. Then, from this service directory:
+Use Python 3.12 or newer. If the standalone Docker model container is running, stop it first with `docker stop housing-model-api` to free port 8000. Then, from this service directory:
 
 ```bash
 python3 -m venv .venv

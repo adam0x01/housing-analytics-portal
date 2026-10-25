@@ -2,24 +2,85 @@
 
 Next.js 16 App Router application serving the UI and Backend for Frontend (BFF). It uses TypeScript, React, Tailwind CSS 4, and shadcn/ui components built on Radix primitives. One shared navigation/layout connects the estimator and market workflows. The portal supports light/dark/system appearance, responsive navigation, accessible labels/focus handling, loading skeletons, validation, empty states, and retryable errors.
 
-## Run
+## Run with Docker (without Compose)
 
-Full stack, from the repository root:
+Start Docker Desktop. Run all Docker commands below from the **repository root**, the directory containing `apps/`, `services/`, and `data/`. The final `.` in `docker build` is the repository root, matching the paths copied by the Dockerfile.
 
-```bash
-docker compose up --build -d --wait
-```
+First build/start the [model](../../services/housing-model-api/README.md#run-with-docker-without-compose), [estimator](../../services/estimator-api/README.md#run-with-docker-without-compose), and [market](../../services/market-api/README.md#run-with-docker-without-compose) containers using their README commands, and wait for each to become healthy. The web app's `docker run` command starts only the web container; it does not start those APIs.
 
-Open [localhost:3000](http://localhost:3000). The [project setup guide](../../README.md) covers ports, shutdown, persistence, and troubleshooting.
+Before starting, make sure host port 3000 is free. If an earlier container, including a Compose-managed one, uses it, find its name with `docker ps` and stop it with `docker stop CONTAINER_NAME`, using its actual name.
 
-For native development, stop the web container to free port 3000 and start the API containers from the repository root:
+### Build and start
 
 ```bash
-docker compose stop web
-docker compose up --build -d --wait housing-model-api estimator-api market-api
+docker network inspect housing-analytics-net >/dev/null 2>&1 || docker network create housing-analytics-net
+docker build -f apps/web/Dockerfile -t housing-web:local .
 ```
 
-Then, from this directory:
+The image supplies Node 22, installs the locked dependencies, and builds the production Next.js server. No host Node installation is required.
+
+Start a new container:
+
+```bash
+docker run -d \
+  --name housing-web \
+  --network housing-analytics-net \
+  --init \
+  --read-only \
+  --tmpfs /tmp \
+  -p 127.0.0.1:3000:3000 \
+  -e ESTIMATOR_API_URL=http://housing-estimator-api:8001 \
+  -e MARKET_API_URL=http://housing-market-api:8002 \
+  -e API_TIMEOUT_MS=15000 \
+  -e MODEL_DOCS_URL=http://127.0.0.1:8000/docs \
+  -e APP_ENVIRONMENT=Testing \
+  -e APP_VERSION=0.0.1 \
+  housing-web:local
+```
+
+The API URLs use container names on the shared network. `MODEL_DOCS_URL` uses the host address because the user's browser opens that Swagger link. These are runtime settings passed explicitly with `-e`; `docker run` does not automatically load the repository's `.env` file.
+
+`-d` returns before readiness. Check until the web container reports `healthy`, then check its endpoint:
+
+```bash
+docker inspect --format '{{.State.Health.Status}}' housing-web
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+Open the [portal](http://127.0.0.1:3000/). The web health check verifies the Next.js server; the API containers must also be running for estimates and market pages to work.
+
+### Stop, start again, and view logs
+
+Run the command you need:
+
+```bash
+# Stop the web server, keeping its container and the APIs running.
+docker stop housing-web
+
+# Start the existing web container again.
+docker start housing-web
+
+# Follow logs; Ctrl+C exits the viewer without stopping the server.
+docker logs -f housing-web
+```
+
+### Apply code or environment changes
+
+For code changes, rebuild the image and remove the old container:
+
+```bash
+docker build -f apps/web/Dockerfile -t housing-web:local .
+docker stop housing-web
+docker rm housing-web
+```
+
+Repeat the `docker run` command above. For environment-only changes, skip the build, stop/remove the container, and repeat `docker run` with the updated `-e` values. `docker start` and `docker restart` keep the old image and environment. Removing the web container does not remove saved estimates, which belong to the estimator's persistent volume.
+
+If `housing-web` already exists, start it with `docker start` or remove it before reusing the name with `docker run`.
+
+## Run locally
+
+For native development, keep the three standalone API containers running and stop the standalone web container with `docker stop housing-web` to free port 3000. Then run from `apps/web/`:
 
 ```bash
 npm ci
@@ -54,13 +115,13 @@ Comparison links can retain explicit selected UUIDs in `?ids=uuid,uuid`; the wha
 | `APP_ENVIRONMENT` | `Testing` | Public deployment label in the sidebar footer |
 | `APP_VERSION` | `0.0.1` | Public release label, displayed with a `v` prefix |
 
-Compose supplies internal service-name addresses. For native development, use loopback addresses. After changing environment values, restart a native web process or run `docker compose up -d --wait web` from the repository root to recreate the container with its updated configuration. `docker compose restart` alone does not apply changed Compose environment values. No frontend rebuild is needed for server URL changes, and no `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
+The standalone `docker run` command supplies internal container-name addresses on the shared network. For native development, use loopback addresses. After changing environment values, restart a native web process or stop/remove/recreate the standalone container with updated `-e` arguments as described above. No frontend rebuild is needed for server URL changes, and no `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
 
 The sidebar footer shows the deployment environment and release, independently of Next.js's production build mode. Its debug icon opens browser diagnostics on desktop and mobile: the actual user agent, viewport, language, time zone, and page path. Details are read when opened and can be copied for a bug report; no diagnostics request is sent to a backend.
 
 Server components load initial data directly from the configured application APIs. Client forms, charts, sorting, filters, downloads, and comparison controls use client components. Browser requests use same-origin `/api/estimator/...` and `/api/market/...` route handlers with an explicit path allowlist. Those handlers forward only required headers, enforce a payload-size limit, preserve download headers, and return clear connection/timeout errors. Portal requests use the BFF; the Python and Java backends each call the shared model service themselves.
 
-The BFF centralises browser-facing API calls. Compose also publishes backend ports on loopback for direct local use, so API access is not exclusive to the BFF. Authentication and per-user authorization are not implemented.
+The BFF centralises browser-facing API calls. The Docker commands above and in the service READMEs also publish backend ports on loopback for direct local use, so API access is not exclusive to the BFF. Authentication and per-user authorization are not implemented.
 
 Route `loading.tsx` files provide skeletons during navigation/data loading. Actions have their own pending skeletons/spinners, disabled submit controls, and live status/error announcements. `useApiAction` cancels obsolete requests so a late filter/comparison response cannot overwrite a newer action. The root error boundary's retry action refetches the affected route. Reduced-motion preferences are respected.
 

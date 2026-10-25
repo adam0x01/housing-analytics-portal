@@ -2,19 +2,82 @@
 
 Java **21** and Spring Boot **3.4.4** service for housing market analysis. It reads the versioned housing CSV, calculates segment statistics, caches aggregate responses, exports filtered data, and calls the shared model service for what-if scenarios.
 
-## Run
+## Run with Docker (without Compose)
 
-From the repository root:
+Start Docker Desktop. Run all Docker commands below from the **repository root**, the directory containing `apps/`, `services/`, and `data/`. The final `.` in `docker build` is the root build context, which includes the shared CSV.
+
+Start the [model container](../housing-model-api/README.md#run-with-docker-without-compose), named `housing-model-api`, first and wait for it to become healthy. The market service can serve dataset analysis without the model, but what-if requests require it. Docker does not start dependencies automatically.
+
+Before starting, make sure host port 8002 is free. If an earlier container, including a Compose-managed one, uses it, find its name with `docker ps` and stop it with `docker stop CONTAINER_NAME`, using its actual name.
+
+### Build and start
 
 ```bash
-docker compose up --build -d --wait market-api
+docker network inspect housing-analytics-net >/dev/null 2>&1 || docker network create housing-analytics-net
+docker build -f services/market-api/Dockerfile -t housing-market-api:local .
 ```
 
-Health: [localhost:8002/health](http://localhost:8002/health).
+The image supplies Maven and JDK 21, runs the Java tests, and packages the service and CSV. No host Java or Maven installation is required.
 
-Compose also starts the model service used by what-if requests. Stop the market service with `docker compose stop market-api`; see the [project setup guide](../../README.md) for the complete stack.
+Start a new container:
 
-Native development requires JDK 21; the Maven wrapper downloads Maven 3.9.11. Stop any Docker market container with `docker compose stop market-api` from the repository root to free port 8002. From this directory:
+```bash
+docker run -d \
+  --name housing-market-api \
+  --network housing-analytics-net \
+  --init \
+  --read-only \
+  --tmpfs /tmp \
+  -p 127.0.0.1:8002:8002 \
+  -e MODEL_API_URL=http://housing-model-api:8000 \
+  -e MODEL_TIMEOUT_MS=10000 \
+  -e DATASET_PATH=/app/data/house-prices.csv \
+  -e PORT=8002 \
+  housing-market-api:local
+```
+
+`-d` returns before the Java application is ready. Check until the container reports `healthy`, then inspect the dataset health and market overview:
+
+```bash
+docker inspect --format '{{.State.Health.Status}}' housing-market-api
+curl --fail http://127.0.0.1:8002/health
+curl --fail http://127.0.0.1:8002/market/overview
+```
+
+The model URL resolves through the shared Docker network. The web app uses `http://housing-market-api:8002` on that network; your browser or host terminal uses `http://127.0.0.1:8002`. The market health check verifies its dataset, rather than the availability of the model.
+
+### Stop, start again, and view logs
+
+Run the command you need:
+
+```bash
+# Stop the Java service, keeping its container.
+docker stop housing-market-api
+
+# Start the existing container again.
+docker start housing-market-api
+
+# Follow logs; Ctrl+C exits the viewer without stopping the server.
+docker logs -f housing-market-api
+```
+
+### Apply code, dataset, or environment changes
+
+For code or CSV changes, rebuild the image and remove the old container:
+
+```bash
+docker build -f services/market-api/Dockerfile -t housing-market-api:local .
+docker stop housing-market-api
+docker rm housing-market-api
+```
+
+Repeat the `docker run` command above. For environment-only changes, skip the build, stop/remove the container, and repeat `docker run` with the updated `-e` values. `docker start` and `docker restart` keep the existing image and environment.
+
+If `housing-market-api` already exists, start it with `docker start` or remove it before reusing its name with `docker run`.
+
+## Run locally
+
+Native development requires JDK 21; the Maven wrapper downloads Maven 3.9.11. Stop the standalone container with `docker stop housing-market-api` to free port 8002. From this service directory:
 
 ```bash
 ./mvnw spring-boot:run

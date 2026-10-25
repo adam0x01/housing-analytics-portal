@@ -2,19 +2,85 @@
 
 Python 3.12+ and FastAPI application backend. Validated submissions call the separate housing model container. Successful predictions are saved with their inputs, model version, warnings, and creation time in SQLite.
 
-## Run
+## Run with Docker (without Compose)
 
-From the repository root:
+Start Docker Desktop and run all Docker commands below from the **repository root**, the directory containing `apps/`, `services/`, and `data/`. The final `.` in the build command must be the repository root.
+
+First start the [model container](../housing-model-api/README.md#run-with-docker-without-compose), named `housing-model-api`, and wait for it to become healthy. Docker starts this estimator independently; it does not start the model automatically.
+
+Before starting, make sure host port 8001 is free. If an earlier container, including a Compose-managed one, uses it, find its name with `docker ps` and stop it with `docker stop CONTAINER_NAME`, using its actual name.
+
+### Build and start
+
+Reuse the shared network and create the estimator's persistent database volume:
 
 ```bash
-docker compose up --build -d --wait estimator-api
+docker network inspect housing-analytics-net >/dev/null 2>&1 || docker network create housing-analytics-net
+docker volume create housing-estimator-data
+docker build -f services/estimator-api/Dockerfile -t housing-estimator-api:local .
 ```
 
-Swagger: [localhost:8001/docs](http://localhost:8001/docs).
+Start a new container:
 
-Compose also starts the required model service. Stop the estimator with `docker compose stop estimator-api`; see the [project setup guide](../../README.md) for the complete stack.
+```bash
+docker run -d \
+  --name housing-estimator-api \
+  --network housing-analytics-net \
+  --init \
+  --read-only \
+  --tmpfs /tmp \
+  -p 127.0.0.1:8001:8001 \
+  -e MODEL_API_URL=http://housing-model-api:8000 \
+  -e MODEL_TIMEOUT_SECONDS=10 \
+  -e DATABASE_PATH=/app/storage/estimates.sqlite \
+  --mount type=volume,src=housing-estimator-data,dst=/app/storage \
+  housing-estimator-api:local
+```
 
-For native development, stop any Docker estimator container with `docker compose stop estimator-api` from the repository root to free port 8001. Keep the model service available, then run from this directory:
+The image supplies Python 3.12 and installs its own dependencies. The model URL uses the model's container name on the shared network, rather than the host's loopback address.
+
+`-d` returns before readiness. Check until the container reports `healthy`, then check local storage and the model integration:
+
+```bash
+docker inspect --format '{{.State.Health.Status}}' housing-estimator-api
+curl --fail http://127.0.0.1:8001/health
+curl --fail http://127.0.0.1:8001/model-info
+```
+
+Open [Swagger UI](http://127.0.0.1:8001/docs). Other containers, including the web app, use `http://housing-estimator-api:8001`. The health check verifies local storage; `/model-info` also exercises the upstream model connection.
+
+### Stop, start again, and view logs
+
+Run the command you need:
+
+```bash
+# Stop the server, keeping the container and saved estimates.
+docker stop housing-estimator-api
+
+# Start the existing container; keep the model running for predictions.
+docker start housing-estimator-api
+
+# Follow logs; Ctrl+C exits the viewer without stopping the server.
+docker logs -f housing-estimator-api
+```
+
+### Apply code or environment changes
+
+For code changes, rebuild the image, then stop and remove the old container:
+
+```bash
+docker build -f services/estimator-api/Dockerfile -t housing-estimator-api:local .
+docker stop housing-estimator-api
+docker rm housing-estimator-api
+```
+
+Repeat the `docker run` command above with the same database volume. Saved estimates survive container replacement. For environment-only changes, skip the build, stop/remove the container, and repeat `docker run` with the updated `-e` values. `docker start` and `docker restart` keep the old image and environment.
+
+An existing `housing-estimator-api` container must be started with `docker start` or removed before its name can be reused by `docker run`.
+
+## Run locally
+
+For native development, stop the standalone container with `docker stop housing-estimator-api` to free port 8001. Keep the model service available, then run from this service directory:
 
 ```bash
 python3 -m venv .venv
@@ -57,7 +123,7 @@ The seven-feature schema matches the model contract, including fractional bathro
 
 ## Persistence and scope
 
-Compose stores the database in the `estimator-data` named volume, so ordinary container rebuilds/restarts preserve history. `docker compose down` preserves this volume; adding `--volumes` deletes it. Native database files are ignored by Git.
+The standalone Docker commands mount the `housing-estimator-data` named volume at `/app/storage`. Stopping or removing the container preserves this volume and its history. This is a separate volume from the one used by Compose, so existing Compose history does not automatically appear in the standalone container. Do not remove the volume if you want to retain its estimates. Native database files are ignored by Git.
 
 History belongs to one shared workspace; user accounts and record ownership are not implemented. SQLite provides persistence with no separate database server. Private per-user history requires authentication and ownership checks, and multiple service instances would need a shared database and migration strategy.
 
