@@ -1,6 +1,6 @@
 # Housing Analytics Portal
 
-A full-stack implementation of the interview assignment's **Task 1: Housing Price Prediction Model API** and **Task 2: Multi-Application Next.js Portal**. The repository contains a regression model service, a Python property estimator backend, a Java market analysis backend, and one shared web portal.
+A property analytics workspace for estimating house prices, comparing saved estimates, and exploring housing market data. A Next.js web portal acts as the Backend for Frontend (BFF), connecting a Python estimator backend and a Java market analysis backend to a shared regression model service.
 
 All four applications are containerised and can be run together locally with Docker Compose. The supplied datasets are included, and the model is trained automatically during the Docker build.
 
@@ -41,20 +41,20 @@ Expect four running, healthy services. Open the portal and API documentation:
 
 The APIs are also available directly on their listed ports. No external model provider, API keys, database installation, or manual model-training step is required for the local demo. Estimate history starts empty on a fresh installation; estimates created through the portal are saved in SQLite.
 
-## What has been delivered
+## Components and features
 
-| Assignment area | Delivered functionality | Implementation |
+| Component | Capabilities | Implementation |
 | --- | --- | --- |
-| **Task 1: Housing Price Prediction Model API** | `POST /predict` accepts one property or a batch; `GET /model-info` exposes coefficients, intercept, evaluation metrics, feature ranges, and model provenance; `GET /health` reports model readiness. Dockerfile and live Swagger/OpenAPI are included. | Python 3.12, FastAPI, scikit-learn linear regression in [`services/housing-model-api`](services/housing-model-api/) |
-| **Task 2, App 1: Property Value Estimator** | Seven-feature property form, client/server validation, prediction table and chart, persistent paginated history, and side-by-side comparison of 2-4 saved estimates. The Python application backend handles submissions and calls the separate model service. | FastAPI, HTTPX, SQLite in [`services/estimator-api`](services/estimator-api/); portal routes under `/estimator` |
-| **Task 2, App 2: Property Market Analysis** | Interactive charts, segment filters, aggregate statistics, responsive sortable/searchable tables, model-powered what-if analysis, and filtered CSV/PDF downloads. The Java backend calls the same model service and caches aggregates with Caffeine. | Java 21, Spring Boot **3.4.4**, Commons CSV, PDFBox in [`services/market-api`](services/market-api/); portal routes under `/market` |
-| **Task 2: Shared Next.js portal** | App Router, shared navigation/layout, Server Components for initial data, Client Components for interactions, reusable hooks, form/state handling, same-origin API routes, skeleton loading, error boundaries/retry controls, and responsive light/dark/system appearance. UI controls include labels, focus feedback, keyboard interaction, and reduced-motion support. | Next.js 16, React, TypeScript, Tailwind CSS, shadcn/ui, React Hook Form, Zod, and Recharts in [`apps/web`](apps/web/) |
+| **Housing Model API** | `POST /predict` accepts one property or a batch; `GET /model-info` exposes coefficients, intercept, evaluation metrics, feature ranges, and model provenance; `GET /health` reports model readiness. Dockerfile and live Swagger/OpenAPI are included. | Python 3.12, FastAPI, scikit-learn linear regression in [`services/housing-model-api`](services/housing-model-api/) |
+| **Property Value Estimator** | Seven-feature property form, client/server validation, prediction table and chart, persistent paginated history, and side-by-side comparison of 2-4 saved estimates. The Python application backend handles submissions and calls the separate model service. | FastAPI, HTTPX, SQLite in [`services/estimator-api`](services/estimator-api/); portal routes under `/estimator` |
+| **Property Market Analysis** | Interactive charts, segment filters, aggregate statistics, responsive sortable/searchable tables, model-powered what-if analysis, and filtered CSV/PDF downloads. The Java backend calls the same model service and caches aggregates with Caffeine. | Java 21, Spring Boot **3.4.4**, Commons CSV, PDFBox in [`services/market-api`](services/market-api/); portal routes under `/market` |
+| **Web Portal and BFF** | App Router, shared navigation/layout, Server Components for initial data, Client Components for interactions, reusable hooks, form/state handling, same-origin API routes, skeleton loading, error boundaries/retry controls, and responsive light/dark/system appearance. UI controls include labels, focus feedback, keyboard interaction, and reduced-motion support. | Next.js 16, React, TypeScript, Tailwind CSS, shadcn/ui, React Hook Form, Zod, and Recharts in [`apps/web`](apps/web/) |
 
 Each deployable has its own dependency manifest and Dockerfile. Compose provides service discovery, startup health dependencies, loopback-bound ports, and a persistent database volume. Runtime containers use non-root users and read-only root filesystems.
 
-## Suggested reviewer walkthrough
+## Try the applications
 
-1. **Demonstrate Task 1 in Swagger.** Open [model Swagger](http://127.0.0.1:8000/docs), expand `POST /predict`, and use **Try it out**. The example selector includes single and batch requests. Execute `GET /model-info` to inspect coefficients and held-out performance metrics, and `GET /health` to check readiness.
+1. **Test predictions in Swagger.** Open [model Swagger](http://127.0.0.1:8000/docs), expand `POST /predict`, and use **Try it out**. The example selector includes single and batch requests. Execute `GET /model-info` to inspect coefficients and held-out performance metrics, and `GET /health` to check readiness.
 2. **Create property estimates.** Open [Value estimator](http://127.0.0.1:3000/estimator). Submit the prefilled seven-feature form, then change some details and save another estimate. Results include a table, chart, model version, and any range warnings.
 3. **Review history and compare.** Open [Estimate history](http://127.0.0.1:3000/estimator/history), inspect saved records, and select 2-4 estimates for [comparison](http://127.0.0.1:3000/estimator/compare). Inputs and predicted prices are displayed side by side.
 4. **Explore market segments.** Open [Market dashboard](http://127.0.0.1:3000/market). Filter by bedrooms, price, floor area, or school rating; inspect the updated summaries/charts and sort, search, or paginate the property table.
@@ -200,7 +200,7 @@ The two CSV files are unchanged copies of the supplied data: **50 labelled prope
 
 The source does not define a currency, distance/lot-size units, or a school-rating scale. Responses and charts retain source units. There are no sale dates or location fields, so market analysis describes property segments rather than historical or regional trends. Cross-validation metrics on this small sample are illustrative; R² is not a confidence percentage or evidence of independent real-market accuracy.
 
-This delivery supports a local, live interview demonstration. History is shared within one workspace; accounts and per-user authorization are not implemented. External hosting and a public multi-user deployment are outside this local setup. See the [assignment requirements review](docs/requirements-review.md) for the mapping from the task brief to the implementation.
+The default setup runs locally with shared estimate history. Accounts and per-user authorization are not implemented. The [architecture overview](docs/architecture-overview.md) explains service boundaries, data ownership, and the current access controls.
 
 ## Troubleshooting
 

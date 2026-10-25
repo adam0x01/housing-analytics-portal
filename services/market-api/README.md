@@ -1,6 +1,6 @@
 # Property Market Analysis API
 
-Java **21** and Spring Boot **3.4.4**, matching the assignment. The service reads the versioned housing CSV, calculates segment statistics, caches aggregate responses, exports filtered data, and calls the model container for what-if scenarios.
+Java **21** and Spring Boot **3.4.4** service for housing market analysis. It reads the versioned housing CSV, calculates segment statistics, caches aggregate responses, exports filtered data, and calls the shared model service for what-if scenarios.
 
 ## Run
 
@@ -12,13 +12,15 @@ docker compose up --build -d --wait market-api
 
 Health: [localhost:8002/health](http://localhost:8002/health).
 
-Native development requires JDK 21; the Maven wrapper downloads Maven 3.9.11. From this directory:
+Compose also starts the model service used by what-if requests. Stop the market service with `docker compose stop market-api`; see the [project setup guide](../../README.md) for the complete stack.
+
+Native development requires JDK 21; the Maven wrapper downloads Maven 3.9.11. Stop any Docker market container with `docker compose stop market-api` from the repository root to free port 8002. From this directory:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Configure `MODEL_API_URL` (default `http://127.0.0.1:8000`), `MODEL_TIMEOUT_MS` (10000), `DATASET_PATH` (`../../data/house-prices.csv`), and `PORT` (8002) as environment variables. JDK 17 cannot build this assignment; the Docker build supplies JDK 21 independently of the host.
+Configure `MODEL_API_URL` (default `http://127.0.0.1:8000`), `MODEL_TIMEOUT_MS` (10000), `DATASET_PATH` (`../../data/house-prices.csv`), and `PORT` (8002) as environment variables. Building the service requires JDK 21; Docker supplies it independently of the host.
 
 ## HTTP contract
 
@@ -39,11 +41,38 @@ curl 'http://localhost:8002/market/export.csv?bedrooms=3' -o market.csv
 
 JSON responses and feature payloads use `snake_case`. Query parameters use the camel-case names listed above.
 
-The what-if body is `{"baseline": {seven features}, "scenario": {seven features}}`, using the same seven fields as the model. Both predictions are produced by one model batch request. The response includes `baseline`, `scenario`, absolute `change`, `change_percent`, model version, price units, and warnings. The percentage is unavailable when the reference prediction is zero. Reference predictions are model estimates, distinct from observed dataset prices.
+What-if requests provide `baseline` and `scenario` objects with the same seven fields as the [model API](../housing-model-api/README.md#api-contract). For example, to compare two bathroom counts while keeping other features fixed:
+
+```bash
+curl --fail --json @- http://localhost:8002/market/what-if <<'JSON'
+{
+  "baseline": {
+    "square_footage": 1550,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "year_built": 1997,
+    "lot_size": 6800,
+    "distance_to_city_center": 4.1,
+    "school_rating": 7.6
+  },
+  "scenario": {
+    "square_footage": 1550,
+    "bedrooms": 3,
+    "bathrooms": 2.5,
+    "year_built": 1997,
+    "lot_size": 6800,
+    "distance_to_city_center": 4.1,
+    "school_rating": 7.6
+  }
+}
+JSON
+```
+
+Both predictions are produced by one model batch request. The response includes `baseline`, `scenario`, absolute `change`, `change_percent`, model version, price units, and warnings. The percentage is unavailable when the reference prediction is zero. Reference predictions are model estimates, distinct from observed dataset prices.
 
 ## Data, caching, and exports
 
-The CSV is read and validated once on startup, including BOM, exact columns, numeric values, and unique IDs. Missing/corrupt data fails startup. Its SHA-256 matches the model's dataset fingerprint. The dataset is immutable for a process lifetime; restart/rebuild to load a new version.
+The CSV is read and validated once on startup, including BOM, exact columns, numeric values, and unique IDs. Missing/corrupt data fails startup. Its SHA-256 matches the model's dataset fingerprint. The dataset is immutable for a process lifetime. Restart a native process after changing its CSV; rebuild the Docker image when changing the CSV copied into it.
 
 Caffeine caches equivalent overview filter records, with a maximum of 128 entries and a five-minute expiry. It avoids recomputing aggregates; the cache is local to the service and is discarded on restart. The source cannot change beneath cached results. Model predictions are not cached. Dataset-only analysis and exports remain available if model serving stops.
 

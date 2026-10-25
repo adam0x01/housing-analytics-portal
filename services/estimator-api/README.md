@@ -12,14 +12,16 @@ docker compose up --build -d --wait estimator-api
 
 Swagger: [localhost:8001/docs](http://localhost:8001/docs).
 
-For native development, from this directory:
+Compose also starts the required model service. Stop the estimator with `docker compose stop estimator-api`; see the [project setup guide](../../README.md) for the complete stack.
+
+For native development, stop any Docker estimator container with `docker compose stop estimator-api` from the repository root to free port 8001. Keep the model service available, then run from this directory:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
 python -m pip install --no-deps -e .
-cp .env.example .env
+cp -n .env.example .env
 uvicorn estimator_api.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
@@ -57,7 +59,7 @@ The seven-feature schema matches the model contract, including fractional bathro
 
 Compose stores the database in the `estimator-data` named volume, so ordinary container rebuilds/restarts preserve history. `docker compose down` preserves this volume; adding `--volumes` deletes it. Native database files are ignored by Git.
 
-This assignment is one shared local workspace, with no user accounts or authentication requirement. History is shared by its visitors. A multi-user deployment needs authentication and ownership checks before offering private per-user history. SQLite keeps this demonstration small; a shared multi-instance service would need a suitable database and migration strategy.
+History belongs to one shared workspace; user accounts and record ownership are not implemented. SQLite provides persistence with no separate database server. Private per-user history requires authentication and ownership checks, and multiple service instances would need a shared database and migration strategy.
 
 ## Tests
 

@@ -1,22 +1,22 @@
 # Housing Price Prediction Model API
 
-Task 1 implementation: Python 3.12+, FastAPI, scikit-learn ordinary least-squares regression, and an independently runnable Docker container.
+Housing price prediction with Python 3.12+, FastAPI, and scikit-learn ordinary least-squares regression. The service supports single and batch inference and runs independently in Docker.
 
 ## Run with Docker
 
 From the repository root, with Docker running:
 
 ```bash
-docker compose up --build -d --wait
+docker compose up --build -d --wait housing-model-api
 ```
 
-Open [Swagger UI](http://localhost:8000/docs). [OpenAPI JSON](http://localhost:8000/openapi.json) and [health](http://localhost:8000/health) are available on the same port. The image trains from the labelled CSV during its build and loads that artifact on startup. Port 8000 is bound to the local machine for the interview demonstration.
+Open [Swagger UI](http://localhost:8000/docs). [OpenAPI JSON](http://localhost:8000/openapi.json) and [health](http://localhost:8000/health) are available on the same port. The image trains from the labelled CSV during its build and loads that artifact on startup. Port 8000 is bound to loopback for local access.
 
-Stop this project's services with `docker compose down` from the repository root.
+Stop this service with `docker compose stop housing-model-api` from the repository root. See the [project setup guide](../../README.md) to start or stop the complete stack.
 
 ## Run locally
 
-Use Python 3.12 or newer. From this service directory:
+Use Python 3.12 or newer. If the Docker model container is running, stop it first with `docker compose stop housing-model-api` from the repository root to free port 8000. Then, from this service directory:
 
 ```bash
 python3 -m venv .venv
@@ -104,4 +104,4 @@ pytest -q
 
 Tests cover supplied samples, raw-unit coefficient predictions, consistent batch ordering, invalid/non-finite inputs, model startup failure, explicit feature order, held-out evaluation against independently generated predictions, CSV corruption, and repeatable retraining.
 
-The GitHub Actions workflow also builds the container and checks its health after deployment. A workflow file is provided; its hosted run is pending repository publication.
+The [model CI workflow](../../.github/workflows/model-api.yml) runs linting and tests, builds the container, and checks its health. Recorded local results are in the [verification notes](../../docs/verification.md).

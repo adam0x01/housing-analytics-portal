@@ -1,6 +1,6 @@
 # Housing Analytics Web Portal
 
-Next.js 16 App Router, TypeScript, React, Tailwind CSS 4, and shadcn/ui components using Radix primitives. One shared navigation/layout connects both application backends. The portal supports light/dark/system appearance, responsive navigation, accessible labels/focus handling, loading skeletons, validation, empty states, and retryable errors.
+Next.js 16 App Router application serving the UI and Backend for Frontend (BFF). It uses TypeScript, React, Tailwind CSS 4, and shadcn/ui components built on Radix primitives. One shared navigation/layout connects the estimator and market workflows. The portal supports light/dark/system appearance, responsive navigation, accessible labels/focus handling, loading skeletons, validation, empty states, and retryable errors.
 
 ## Run
 
@@ -10,11 +10,20 @@ Full stack, from the repository root:
 docker compose up --build -d --wait
 ```
 
-Open [localhost:3000](http://localhost:3000). For native development, start the three backend containers, then from this directory:
+Open [localhost:3000](http://localhost:3000). The [project setup guide](../../README.md) covers ports, shutdown, persistence, and troubleshooting.
+
+For native development, stop the web container to free port 3000 and start the API containers from the repository root:
+
+```bash
+docker compose stop web
+docker compose up --build -d --wait housing-model-api estimator-api market-api
+```
+
+Then, from this directory:
 
 ```bash
 npm ci
-cp .env.example .env.local
+cp -n .env.example .env.local
 npm run dev
 ```
 
@@ -45,11 +54,13 @@ Comparison links can retain explicit selected UUIDs in `?ids=uuid,uuid`; the wha
 | `APP_ENVIRONMENT` | `Testing` | Public deployment label in the sidebar footer |
 | `APP_VERSION` | `0.0.1` | Public release label, displayed with a `v` prefix |
 
-Compose supplies internal service-name addresses. For native development, use loopback addresses. Change these variables and restart the web process/container; no frontend rebuild is needed for server URL changes. No `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
+Compose supplies internal service-name addresses. For native development, use loopback addresses. After changing environment values, restart a native web process or run `docker compose up -d --wait web` from the repository root to recreate the container with its updated configuration. `docker compose restart` alone does not apply changed Compose environment values. No frontend rebuild is needed for server URL changes, and no `NEXT_PUBLIC_*` service URLs are baked into browser JavaScript.
 
 The sidebar footer shows the deployment environment and release, independently of Next.js's production build mode. Its debug icon opens browser diagnostics on desktop and mobile: the actual user agent, viewport, language, time zone, and page path. Details are read when opened and can be copied for a bug report; no diagnostics request is sent to a backend.
 
-Server components load initial data directly from the configured application APIs. Client forms, charts, sorting, filters, downloads, and comparison controls use client components. Browser requests use same-origin `/api/estimator/...` and `/api/market/...` route handlers with an explicit path allowlist. Those handlers forward only required headers, enforce a payload-size limit, preserve download headers, and return clear connection/timeout errors. The browser never calls internal container addresses. The Python and Java backends both own their required model integrations.
+Server components load initial data directly from the configured application APIs. Client forms, charts, sorting, filters, downloads, and comparison controls use client components. Browser requests use same-origin `/api/estimator/...` and `/api/market/...` route handlers with an explicit path allowlist. Those handlers forward only required headers, enforce a payload-size limit, preserve download headers, and return clear connection/timeout errors. Portal requests use the BFF; the Python and Java backends each call the shared model service themselves.
+
+The BFF centralises browser-facing API calls. Compose also publishes backend ports on loopback for direct local use, so API access is not exclusive to the BFF. Authentication and per-user authorization are not implemented.
 
 Route `loading.tsx` files provide skeletons during navigation/data loading. Actions have their own pending skeletons/spinners, disabled submit controls, and live status/error announcements. `useApiAction` cancels obsolete requests so a late filter/comparison response cannot overwrite a newer action. The root error boundary's retry action refetches the affected route. Reduced-motion preferences are respected.
 

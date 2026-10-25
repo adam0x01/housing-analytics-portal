@@ -39,7 +39,7 @@ class PropertyFeatures(BaseModel):
         FiniteFloat, Field(ge=0, description="Units as supplied in the dataset")
     ]
     school_rating: Annotated[
-        FiniteFloat, Field(ge=0, description="Rating scale is not specified in the assignment")
+        FiniteFloat, Field(ge=0, description="Rating scale is unspecified in the source data")
     ]
 
     def feature_vector(self) -> list[float]:

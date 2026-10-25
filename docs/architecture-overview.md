@@ -1,10 +1,12 @@
 # Architecture overview
 
+Service boundaries, data ownership, model lifecycle, and request handling. See the [project guide](../README.md) for local setup and an ASCII overview of the service relationships.
+
 ## Service boundaries
 
 ```mermaid
 flowchart LR
-    Browser[Browser] --> Web[Next.js portal and same-origin route handlers]
+    Browser[Browser] --> Web[Next.js UI and BFF]
     Web --> Estimator[Python estimator API]
     Web --> Market[Java market API]
     Estimator --> Model[Python housing model API]
@@ -21,11 +23,11 @@ flowchart LR
 
 `services/estimator-api` owns property-estimation workflows, validates submissions, and calls the model with a configurable HTTPX timeout. It saves successful predictions and their original feature values/model versions in SQLite. A named Docker volume retains history across restarts. Comparisons retrieve existing records without recomputing predictions. Failed upstream calls do not save estimates. This is one shared demo workspace; private per-user history would require authentication and ownership checks.
 
-`services/market-api` uses Java 21 and Spring Boot 3.4.4, as requested. It validates and loads the dataset once, calculates filtered aggregates, and uses a bounded five-minute Caffeine cache for overview results. What-if scenarios call the model's batch endpoint through Spring RestClient. Commons CSV and PDFBox produce filtered exports. The immutable dataset and its SHA-256 define a process's source version; restarting with new data also clears the cache. The dashboard describes cross-sectional sample segments, with no invented market time series.
+`services/market-api` uses Java 21 and Spring Boot 3.4.4. It validates and loads the dataset once, calculates filtered aggregates, and uses a bounded five-minute Caffeine cache for overview results. What-if scenarios call the model's batch endpoint through Spring RestClient. Commons CSV and PDFBox produce filtered exports. The immutable dataset and its SHA-256 define a process's source version. Loading changed data requires a process restart, or an image rebuild for the CSV copied into Docker; restarting also clears the cache. The dashboard describes cross-sectional sample segments.
 
 ## Why keep the estimator API separate?
 
-The assignment explicitly asks for a Python application backend that integrates with the Task 1 container and a Java backend doing the same. A separate estimator service shows that boundary even though a smaller real product could combine the Python services. This is a requirement-led design decision, not a claim that more services are always better.
+The estimator owns application workflows and saved records; the model service owns training, model metadata, and inference. This keeps storage and comparison logic independent of the serving model and lets both the Python estimator and Java market service reuse the same prediction contract. The extra HTTP boundary adds latency and container-management overhead, so each caller uses explicit timeouts and handles upstream failures.
 
 ## Dataset and artifact ownership
 
@@ -35,21 +37,23 @@ The assignment explicitly asks for a Python application backend that integrates 
 - A Docker build uses the repository root as context, copies the service and labelled data, and creates its artifact during the build.
 - The model artifact uses joblib for a local scikit-learn object. Load only artifacts produced by this project's trusted training/build process: pickle-based formats can execute code when loaded.
 
-## First model choice
+## Regression model
 
-Start with scikit-learn `LinearRegression` using all seven numeric features. It is an ordinary least-squares baseline with an intercept and directly inspectable coefficients, which supports `/model-info`. There are no categorical or missing feature values to encode or impute. Scaling is not necessary for this unregularised baseline; coefficients remain in source units.
+The model uses scikit-learn `LinearRegression` with all seven numeric features. This ordinary least-squares baseline has an intercept and directly inspectable coefficients exposed through `/model-info`. The dataset contains no categorical or missing feature values to encode or impute. Coefficients remain in the original feature units.
 
-Five-fold shuffled cross-validation with seed 42 produces out-of-fold predictions for all 50 houses. Each fold trains only on its training rows. Evaluate the same folds with a `DummyRegressor(strategy="mean")` so error reductions have a meaningful reference. Then fit the serving model on all labelled data. No model or hyperparameter selection is performed using those scores. A future model comparison would need nested validation or independent labelled evaluation data.
+Five-fold shuffled cross-validation with seed 42 produces out-of-fold predictions for all 50 houses. Each fold trains only on its training rows. A `DummyRegressor(strategy="mean")` is evaluated on the same splits as a baseline. The serving model is then fitted on all labelled data. No model or hyperparameter selection is performed using those scores.
 
-The sample is tiny and strongly correlated. Report evaluation limitations alongside scores. Individual coefficient signs can be misleading because the features move together. Ridge regression is a sensible future comparison if coefficient instability matters, but it introduces scaling and regularisation choices that are unnecessary for the initial contract.
+The small, correlated sample limits generalisation and coefficient interpretation. Individual coefficient signs describe fitted relationships within this sample and do not establish causality. The [evaluation report](model-evaluation.md) records held-out metrics, baseline comparisons, and limitations.
 
 ## Request flow and operations
 
-The browser calls same-origin Next.js `/api/estimator/...` and `/api/market/...` route handlers. The server proxy allowlists routes and forwards downloads and structured failures. React server components call the configured upstreams directly for initial rendering. Internal service addresses are runtime environment variables; they are not baked into browser bundles. No cross-origin browser calls or permissive CORS policy is needed. Port 8000 remains loopback-only for local Swagger. There is no public training/upload endpoint.
+The browser calls same-origin Next.js `/api/estimator/...` and `/api/market/...` Route Handlers. This BFF layer allowlists paths, checks forwarded body size, applies request timeouts, and forwards downloads and structured failures. React Server Components call the configured upstreams directly for initial rendering. Internal service addresses are runtime environment variables and are not baked into browser bundles.
+
+All four published ports bind to loopback. Local clients can call the application and model APIs directly for development and inspection; access is not exclusive to the BFF. Authentication, per-user authorization, and service-to-service authentication are not implemented. There is no public training or artifact-upload endpoint.
 
 Both application backends map invalid input to 422, upstream timeouts to 504, unavailable upstreams to 503, and malformed model responses to 502. They use explicit timeouts and avoid unbounded retries. Dataset-only market analysis and exports remain available if the model stops. Client actions have pending/error states and cancel obsolete requests. Route-level error recovery uses Next.js `retry()` to refetch data.
 
-Root Compose connects all four deployables by service name, supplies readiness dependencies, and gives each runtime a non-root user and read-only root filesystem. Only estimator storage and temporary directories are writable. Root `.env.example` documents service URL/port/timeout overrides; service-local examples document native development. Local demonstration comes before choosing external hosting. Secrets, virtual environments, database files, model binaries, recordings, transcripts, and personal preparation notes are excluded from Git.
+Root Compose connects all four deployables by service name, supplies readiness dependencies, and gives each runtime a non-root user and read-only root filesystem. Only estimator storage and temporary directories are writable. Root [`.env.example`](../.env.example) documents service URL, port, timeout, and deployment-label overrides. The [service guides](../README.md#verification) cover native development and component checks. Local environment files, generated model artifacts, SQLite files, and dependency/build caches are excluded from Git.
 
 ## Primary technical references
 

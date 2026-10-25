@@ -1,6 +1,6 @@
-# Verification notes
+# Verification record
 
-Local verification on 2026-10-24. Docker supplies Python 3.12, Java 21, and Node 22. All four runtime images use non-root users; Compose gives them read-only root filesystems, temporary writable directories, and a dedicated SQLite storage volume.
+The automated baseline below was recorded locally on 2026-10-24, with subsequent UI checks summarised separately. Docker supplies Python 3.12, Java 21, and Node 22. All four runtime images use non-root users; Compose gives them read-only root filesystems, temporary writable directories, and a dedicated SQLite storage volume. Follow the [project verification instructions](../README.md#verification) to reproduce the checks against a running checkout.
 
 ## Automated checks
 
@@ -13,7 +13,7 @@ Local verification on 2026-10-24. Docker supplies Python 3.12, Java 21, and Node
 | Containers | Build and readiness checks passed | Model, Python estimator, Java market, and production Next.js server |
 | Real HTTP stack | `python3 scripts/smoke-stack.py` passed | Dataset/model identity, statistics, filters, actual scenario calls, CSV/PDF responses, validation, history, seven portal pages |
 
-The Python TestClient currently emits an upstream HTTPX deprecation warning. Its assertions pass; the warning concerns the test adapter, rather than serving requests.
+The recorded Python TestClient run emitted an upstream HTTPX deprecation warning. Its assertions passed; the warning concerned the test adapter.
 
 ## Browser checks
 
@@ -23,8 +23,8 @@ The Python TestClient currently emits an upstream HTTPX deprecation warning. Its
 - Applied bedrooms = 3 and minimum price = 200000. The dashboard returned 21 properties with consistent summaries and charts.
 - Downloaded CSV and PDF from the browser. Parsed the downloaded CSV to verify all 21 rows met the active filters. Rendered the generated PDF and checked headers, table alignment, legibility, and pagination.
 - Selected reference Property 002 and changed bathrooms from 2 to 2.5. The Java service returned real model predictions of `285478.90` and `289197.37`, a difference of `3718.47`. The observed dataset price (`265000`) is labelled separately.
-- After simplifying the overview and shared sidebar, TypeScript, the production Docker build, and the full stack smoke check passed again. Checked the compact sidebar at 1280px in light/dark mode and the navigation drawer at 390px; no horizontal overflow. Refreshed the overview screenshots. The logo-to-navigation gap is 16px, and the dataset badge, reference card, duplicate branding/footer, introductory slogan, and explanatory overview panel are removed.
-- Added a configurable `Testing · v2.1` deployment footer and browser diagnostics on desktop and mobile. Verified the actual user agent, page path, locale/time zone, viewport updates when reopened, copy-success feedback, and closing the nested mobile popover/drawer. Checked both themes and a 390px viewport. Chart containers clip hidden tooltip overflow when resizing. TypeScript, all 15 web tests, and the production Docker build passed after the addition.
+- Checked the overview and sidebar at 1280px and the navigation drawer at 390px in both themes, with no horizontal overflow. TypeScript, the production Docker build, and the stack smoke check passed after the layout changes.
+- Verified the deployment environment/version footer and browser diagnostics on desktop and mobile: actual user agent, page path, locale/time zone, viewport updates when reopened, copy-success feedback, and closing the nested popover/drawer. Chart containers clip hidden tooltip overflow when resizing. TypeScript, all 15 web tests, and the production Docker build passed after the addition.
 
 ## Failure and persistence checks
 
@@ -32,8 +32,10 @@ The Python TestClient currently emits an upstream HTTPX deprecation warning. Its
 - Restarted the estimator container and compared the complete history response before/after: both saved records and their values remained unchanged.
 - Stopped the Java market service and loaded its portal page: the shared layout stayed usable and the route displayed a clear service-error fallback. Restored the service, clicked its retry control, and verified the complete market dashboard reloaded successfully.
 
-## Scope and remaining delivery steps
+## Verification scope
 
-GitHub Actions workflows are supplied, but their hosted runs are pending GitHub publication. The application is deployed locally with Compose; external hosting has not been selected. The project is a shared local workspace without accounts or per-user authorization. Tests establish implementation behaviour on the supplied sample, rather than independent valuation accuracy, measured production throughput, or a formal accessibility certification.
+The [GitHub Actions workflows](../.github/workflows/) run component checks, image builds, and full-stack integration checks. The results recorded here are local observations, not a statement about a particular hosted CI run.
 
-Personal interview preparation, recordings, transcripts, virtual environments, database files, model binaries, and environment secrets are excluded from commits. Sample estimates created during browser verification are real model results retained only in the local database volume.
+These checks cover functionality, error recovery, and persistence on the supplied sample. They do not establish independent valuation accuracy, measured production throughput, or formal accessibility certification. The workspace has shared history and no accounts or per-user authorization.
+
+Sample estimates created during browser verification are real model results retained only in the local database volume. A fresh installation starts with empty history.

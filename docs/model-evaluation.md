@@ -1,4 +1,4 @@
-# First model evaluation
+# Model evaluation
 
 Recorded on 2026-10-23 using the supplied 50-row labelled file and the service's pinned Python 3.12 environment. Recreate the full report by running the training command in the [service instructions](../services/housing-model-api/README.md), or inspect `/model-info` on the running API.
 
