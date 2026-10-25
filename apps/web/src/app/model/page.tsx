@@ -40,11 +40,13 @@ export default async function ModelPage() {
         title="Understand what sits behind the estimate."
         description="An inspectable regression baseline, with its validation results and limitations in the open."
         action={
-          <Button variant="outline" asChild>
-            <a href={docsUrl} target="_blank" rel="noreferrer">
-              API documentation <ArrowUpRight />
-            </a>
-          </Button>
+          docsUrl ? (
+            <Button variant="outline" asChild>
+              <a href={docsUrl} target="_blank" rel="noreferrer">
+                API documentation <ArrowUpRight />
+              </a>
+            </Button>
+          ) : undefined
         }
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

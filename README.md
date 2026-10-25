@@ -139,6 +139,9 @@ Authentication, authorization, and service-to-service authentication are not imp
 
 ## Optional configuration
 
+For cloud hosting and deployment from a selected GitHub branch, see the
+[Fly.io deployment guide](docs/deployment-fly.md).
+
 Copy [`.env.example`](.env.example) to a root `.env` file if custom settings are needed; edit an existing `.env` rather than overwriting it.
 
 | Configuration | Variables | Default |
