@@ -6,6 +6,8 @@ relative to `deploy/fly/`, while the build context remains the repository root.
 Only `<prefix>-web` has public IP addresses.
 Model, estimator and market use Flycast on the organization's private network;
 unlike direct `.internal` connections, Flycast can wake sleeping Machines.
+The Java model client uses HTTP/1.1 to avoid cleartext HTTP/2 upgrades across
+the private HTTP proxy.
 
 Defaults are Singapore (`sin`), one shared-CPU Machine per service, and idle
 autostop. Model and web have 512MB RAM, estimator 256MB, and Java market 1GB.

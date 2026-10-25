@@ -27,9 +27,11 @@ class MarketApiTest {
   @Autowired MockMvc mvc;
   @Autowired MarketService market;
   @Autowired com.fasterxml.jackson.databind.ObjectMapper mapper;
+  @Autowired org.springframework.web.client.RestClient.Builder restClientBuilder;
   static HttpServer server;
   static AtomicReference<String> response = new AtomicReference<>();
   static AtomicReference<String> lastRequest = new AtomicReference<>();
+  static AtomicReference<String> lastUpgrade = new AtomicReference<>();
 
   @DynamicPropertySource
   static void configure(DynamicPropertyRegistry registry) throws Exception {
@@ -37,6 +39,7 @@ class MarketApiTest {
     server.createContext(
         "/predict",
         exchange -> {
+          lastUpgrade.set(exchange.getRequestHeaders().getFirst("Upgrade"));
           lastRequest.set(
               new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
           byte[] bytes = response.get().getBytes(StandardCharsets.UTF_8);
@@ -60,6 +63,7 @@ class MarketApiTest {
         "{\"model_version\":\"test-v1\",\"price_unit\":\"source"
             + " units\",\"predictions\":[{\"price\":250000,\"warnings\":[]},{\"price\":275000,\"warnings\":[]}]}");
     lastRequest.set(null);
+    lastUpgrade.set(null);
   }
 
   @Test
@@ -157,6 +161,18 @@ class MarketApiTest {
     mvc.perform(post("/market/what-if").contentType("application/json").content("{}"))
         .andExpect(status().isUnprocessableEntity());
     assertThat(lastRequest.get()).isNull();
+  }
+
+  @Test
+  void modelRequestsUseHttp11WithoutCleartextUpgrade() {
+    var features =
+        market.overview(new Filter(null, null, null, null, null, null))
+            .properties().get(0).features();
+    var gateway =
+        new ModelGateway(
+            restClientBuilder.clone(), "http://127.0.0.1:" + server.getAddress().getPort(), 10000);
+    gateway.predict(new WhatIfRequest(features, features));
+    assertThat(lastUpgrade.get()).isNull();
   }
 
   @Test
