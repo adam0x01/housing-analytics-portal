@@ -17,6 +17,9 @@ spring:
     cache-names: market-overview
     caffeine:
       spec: maximumSize=128,expireAfterWrite=5m,recordStats
+springdoc:
+  swagger-ui:
+    path: /docs
 market:
   dataset-path: ${DATASET_PATH:../../data/house-prices.csv}
   model-api-url: ${MODEL_API_URL:http://127.0.0.1:8000}

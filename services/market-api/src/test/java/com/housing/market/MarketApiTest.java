@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.pdfbox.Loader;
@@ -59,6 +60,73 @@ class MarketApiTest {
         "{\"model_version\":\"test-v1\",\"price_unit\":\"source"
             + " units\",\"predictions\":[{\"price\":250000,\"warnings\":[]},{\"price\":275000,\"warnings\":[]}]}");
     lastRequest.set(null);
+  }
+
+  @Test
+  void openApiDescribesEndpointsFiltersAndSnakeCaseFeatures() throws Exception {
+    String json =
+        mvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith("application/json"))
+            .andExpect(jsonPath("$.info.title").value("Housing Market Analysis API"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var document = mapper.readTree(json);
+    var paths = document.path("paths");
+    assertThat(paths.has("/health")).isTrue();
+    assertThat(paths.path("/market/what-if").path("post").has("requestBody")).isTrue();
+    for (String endpoint :
+        List.of("/market/overview", "/market/export.csv", "/market/export.pdf")) {
+      var operation = paths.path(endpoint).path("get");
+      assertThat(operation.has("requestBody")).isFalse();
+      assertThat(operation.path("parameters").findValuesAsText("name"))
+          .containsExactlyInAnyOrder(
+              "bedrooms", "minPrice", "maxPrice", "minArea", "maxArea", "minSchoolRating");
+      assertThat(operation.path("parameters").findValuesAsText("in")).containsOnly("query");
+    }
+    assertThat(
+            document
+                .path("components")
+                .path("schemas")
+                .path("Features")
+                .path("properties")
+                .has("square_footage"))
+        .isTrue();
+    assertThat(
+            paths
+                .path("/market/export.csv")
+                .path("get")
+                .path("responses")
+                .path("200")
+                .path("content")
+                .has("text/csv"))
+        .isTrue();
+    assertThat(
+            paths
+                .path("/market/export.pdf")
+                .path("get")
+                .path("responses")
+                .path("200")
+                .path("content")
+                .path("application/pdf")
+                .path("schema")
+                .path("format")
+                .asText())
+        .isEqualTo("binary");
+  }
+
+  @Test
+  void swaggerUiAndItsOpenApiConfigurationAreAvailable() throws Exception {
+    mvc.perform(get("/docs"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/swagger-ui/index.html"));
+    mvc.perform(get("/swagger-ui/index.html"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith("text/html"));
+    mvc.perform(get("/v3/api-docs/swagger-config"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.url").value("/v3/api-docs"));
   }
 
   @Test

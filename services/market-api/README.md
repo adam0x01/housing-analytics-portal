@@ -12,6 +12,10 @@ docker compose up --build -d --wait market-api
 
 Health: [localhost:8002/health](http://localhost:8002/health).
 
+Swagger UI: [localhost:8002/docs](http://localhost:8002/docs). The UI redirects to `/swagger-ui/index.html` and supports trying the market endpoints, segment filters, what-if requests, and downloads. The generated OpenAPI JSON is available at [localhost:8002/v3/api-docs](http://localhost:8002/v3/api-docs).
+
+Swagger is provided by `springdoc-openapi-starter-webmvc-ui` **2.8.14**, from the [2.8.x line compatible with Spring Boot 3.4.x](https://springdoc.org/v2/#_what_is_the_compatibility_matrix_of_springdoc_openapi_with_spring_boot). This patch avoids a [later Swagger resource-path regression on Spring Boot 3.4.4](https://github.com/springdoc/springdoc-openapi/issues/3210). If the service is already running, rebuild/restart it to load the dependency. Native startup enables the same documentation endpoints.
+
 Compose also starts the model service used by what-if requests. Stop the market service with `docker compose stop market-api`; see the [project setup guide](../../README.md) for the complete stack.
 
 ## Run directly with Maven
@@ -219,4 +223,4 @@ Model timeouts return 504, connection failures return 503, and invalid model res
 ./mvnw verify
 ```
 
-Tests load the actual dataset and use a local HTTP model stub. They cover filtered/empty results, cache reuse, invalid requests, batch request/response mapping, scenario deltas, CSV filtering, and readable multipage PDF output. Docker runs these tests as part of its build.
+Tests load the actual dataset and use a local HTTP model stub. They cover filtered/empty results, cache reuse, invalid requests, batch request/response mapping, scenario deltas, CSV filtering, readable multipage PDF output, and the Swagger/OpenAPI contract. Docker runs these tests as part of its build.

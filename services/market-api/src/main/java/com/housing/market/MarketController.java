@@ -2,9 +2,14 @@ package com.housing.market;
 
 import static com.housing.market.Domain.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Map;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +29,7 @@ public class MarketController {
   }
 
   @GetMapping("/health")
+  @Operation(summary = "Check dataset readiness")
   public Map<String, Object> health() {
     return Map.of(
         "status",
@@ -35,18 +41,26 @@ public class MarketController {
   }
 
   @GetMapping("/market/overview")
-  public Overview overview(@Valid @ModelAttribute Filter filter) {
+  @Operation(summary = "Get market statistics and properties for a segment")
+  public Overview overview(@Valid @ParameterObject @ModelAttribute Filter filter) {
     filter.validate();
     return market.overview(filter);
   }
 
   @PostMapping("/market/what-if")
+  @Operation(summary = "Compare baseline and scenario prices using the housing model")
   public WhatIfResult whatIf(@Valid @RequestBody WhatIfRequest input) {
     return model.predict(input);
   }
 
   @GetMapping("/market/export.csv")
-  public ResponseEntity<String> csv(@Valid @ModelAttribute Filter filter) throws IOException {
+  @Operation(summary = "Download matching properties as CSV")
+  @ApiResponse(
+      responseCode = "200",
+      description = "CSV download",
+      content = @Content(mediaType = "text/csv", schema = @Schema(type = "string")))
+  public ResponseEntity<String> csv(@Valid @ParameterObject @ModelAttribute Filter filter)
+      throws IOException {
     filter.validate();
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
@@ -55,7 +69,15 @@ public class MarketController {
   }
 
   @GetMapping("/market/export.pdf")
-  public ResponseEntity<byte[]> pdf(@Valid @ModelAttribute Filter filter) throws IOException {
+  @Operation(summary = "Download a market report as PDF")
+  @ApiResponse(
+      responseCode = "200",
+      description = "PDF download",
+      content =
+          @Content(
+              mediaType = "application/pdf", schema = @Schema(type = "string", format = "binary")))
+  public ResponseEntity<byte[]> pdf(@Valid @ParameterObject @ModelAttribute Filter filter)
+      throws IOException {
     filter.validate();
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_PDF)
