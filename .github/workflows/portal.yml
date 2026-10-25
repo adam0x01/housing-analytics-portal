@@ -3,9 +3,9 @@ name: Portal and application APIs
 on:
   workflow_call:
   push:
-    paths: ["apps/web/**", "services/estimator-api/**", "services/market-api/**", "data/**", "docker-compose.yml", ".dockerignore", "scripts/**", ".github/workflows/portal.yml"]
+    paths: ["apps/web/**", "services/estimator-api/**", "services/market-api/**", "data/**", "deploy/fly/**", "docker-compose.yml", ".dockerignore", "scripts/**", ".github/workflows/portal.yml"]
   pull_request:
-    paths: ["apps/web/**", "services/estimator-api/**", "services/market-api/**", "data/**", "docker-compose.yml", ".dockerignore", "scripts/**", ".github/workflows/portal.yml"]
+    paths: ["apps/web/**", "services/estimator-api/**", "services/market-api/**", "data/**", "deploy/fly/**", "docker-compose.yml", ".dockerignore", "scripts/**", ".github/workflows/portal.yml"]
 
 permissions:
   contents: read
@@ -63,12 +63,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build and start all four services
-        run: docker compose up --build -d --wait --wait-timeout 180
+        run: docker compose -f docker-compose.yml -f deploy/fly/compose.test.yml up --build -d --wait --wait-timeout 180
       - name: Verify real service integrations
         run: python3 scripts/smoke-stack.py
       - name: Capture logs
         if: failure()
-        run: docker compose logs --no-color
+        run: docker compose -f docker-compose.yml -f deploy/fly/compose.test.yml logs --no-color
       - name: Stop services
         if: always()
-        run: docker compose down
+        run: docker compose -f docker-compose.yml -f deploy/fly/compose.test.yml down

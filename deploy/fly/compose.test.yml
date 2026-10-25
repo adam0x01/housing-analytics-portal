@@ -1,0 +1,11 @@
+# Test the Fly image's default startup against a fresh root-owned volume.
+services:
+  estimator-api:
+    build:
+      target: fly
+    volumes:
+      - type: volume
+        source: estimator-data
+        target: /app/storage
+        volume:
+          nocopy: true
