@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import { Providers } from "@/components/providers";
+import { version as appVersion } from "../../package.json";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default function RootLayout({
           <AppShell
             deployment={{
               environment: process.env.APP_ENVIRONMENT?.trim() || "Testing",
-              version: process.env.APP_VERSION?.trim().replace(/^v/i, "") || "0.0.1",
+              version: process.env.APP_VERSION?.trim().replace(/^v/i, "") || appVersion,
             }}
           >
             {children}
