@@ -1,8 +1,8 @@
 # Fly.io deployment
 
-Four apps reuse the repository Dockerfiles. Only `<prefix>-web` is public; model, estimator, and market use private Flycast addresses so sleeping services can wake on request.
+Four apps reuse the repository Dockerfiles. Only `<prefix>-web` is public; model, estimator, and market use private Flycast addresses.
 
-Defaults: Singapore (`sin`), one shared-CPU Machine per service, idle autostop. Model/web use 512 MB RAM, estimator 256 MB, and market 1 GB. Keep all four apps in the same region. To avoid cold starts during a demo, set `auto_stop_machines = "off"` and `min_machines_running = 1` in all four TOML files before deploying.
+Defaults: Singapore (`sin`), at least one shared-CPU Machine kept running per service (`min_machines_running = 1`) to avoid idle cold starts across the service chain. Model/web use 512 MB RAM, estimator 256 MB, and market 1 GB. Keep all four apps in the same region. Autostop remains enabled for Machines above that minimum. To restore scale-to-zero behavior, set `min_machines_running = 0` in all four TOML files and redeploy.
 
 ## Initial setup
 
@@ -51,7 +51,7 @@ GitHub Actions deploys pushes to **`release`** after model, application, and ful
 - Keep the estimator at **one Machine** for its single SQLite volume. Its Fly entrypoint prepares volume permissions before dropping to UID/GID 10001. `--ha=false` prevents an extra Machine on first deployment; it does not scale down existing apps.
 - The CI stack check uses `deploy/fly/compose.test.yml` to test that entrypoint with a fresh root-owned volume.
 - Volume snapshots are retained for seven days. Preserve the volume when redeploying; important history needs an independent backup.
-- Idle autostop reduces running compute usage but storage and other charges can remain. This is a shared demo without accounts or high availability.
+- Each service's baseline Machine incurs running CPU/RAM charges even when idle; storage and other charges also apply. This is a shared demo without accounts or high availability.
 - Deployments are sequential, not atomic. If a later step fails, inspect the failed app and rerun or deploy a known-good commit; already updated apps remain updated.
 
 ```bash
