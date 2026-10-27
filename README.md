@@ -15,14 +15,17 @@ docker compose up --build -d --wait --wait-timeout 180
 docker compose ps
 ```
 
-Expect four healthy services. Docker supplies Node 22, Python 3.12, and Java 21; no host runtimes, environment file, or API keys are required. The first build needs internet access and free ports 3000, 8000, 8001, and 8002. It includes the supplied datasets and trains the model automatically.
+- Expect four healthy services.
+- Docker supplies Node 22, Python 3.12, and Java 21; no host runtimes, environment file, or API keys are required.
+- The first build needs internet access and free ports 3000, 8000, 8001, and 8002.
+- It includes the supplied datasets and trains the model automatically.
 
-| Application | Local URL |
-| --- | --- |
-| Web portal | [localhost:3000](http://localhost:3000) |
-| Model API / Swagger | [localhost:8000/docs](http://localhost:8000/docs) |
-| Estimator API / Swagger | [localhost:8001/docs](http://localhost:8001/docs) |
-| Market API / Swagger | [localhost:8002/docs](http://localhost:8002/docs) |
+| Application | Local URL | Folder | Features | Stack / development guide |
+| --- | --- | --- | --- | --- |
+| Web portal | [localhost:3000](http://localhost:3000) | [apps/web/](apps/web/) | Shared navigation, server-rendered initial data, same-origin API proxy, responsive layouts, loading/error states, light/dark themes | [Next.js App Router, TypeScript, Tailwind, shadcn/ui](apps/web/README.md) |
+| Model API / Swagger | [localhost:8000/docs](http://localhost:8000/docs) | [services/housing-model-api/](services/housing-model-api/) | Single and batch predictions, coefficients, evaluation metrics, health | [Python 3.12, FastAPI, scikit-learn](services/housing-model-api/README.md) |
+| Value estimator API / Swagger | [localhost:8001/docs](http://localhost:8001/docs) | [services/estimator-api/](services/estimator-api/) | Validated seven-feature form, result table/chart, saved history, comparison of 2–4 properties | [Python, FastAPI, SQLite](services/estimator-api/README.md) |
+| Market analysis API / Swagger | [localhost:8002/docs](http://localhost:8002/docs) | [services/market-api/](services/market-api/) | Segment filters, interactive charts, sortable tables, what-if scenarios, CSV/PDF exports, cached aggregates | [Java 21, Spring Boot 3.4.4, Caffeine](services/market-api/README.md) |
 
 The hosted demo may take a moment to wake after inactivity. Model Swagger is available locally for the interview demonstration; hosted backend services use private networking.
 
@@ -35,18 +38,7 @@ docker compose up -d --wait            # Start again
 docker compose down                   # Remove containers; preserve saved estimates
 ```
 
-Saved estimates persist in a SQLite volume; `docker compose down --volumes` deletes that history. Optional port, URL, and timeout settings are in [`.env.example`](.env.example). Native startup instructions are linked in the component table below.
-
-## Applications
-
-| Component | Folder | Features | Stack / development guide |
-| --- | --- | --- | --- |
-| Model API | [services/housing-model-api/](services/housing-model-api/) | Single and batch predictions, coefficients, evaluation metrics, health | [Python 3.12, FastAPI, scikit-learn](services/housing-model-api/README.md) |
-| Value estimator | [services/estimator-api/](services/estimator-api/) | Validated seven-feature form, result table/chart, saved history, comparison of 2–4 properties | [Python, FastAPI, SQLite](services/estimator-api/README.md) |
-| Market analysis | [services/market-api/](services/market-api/) | Segment filters, interactive charts, sortable tables, what-if scenarios, CSV/PDF exports, cached aggregates | [Java 21, Spring Boot 3.4.4, Caffeine](services/market-api/README.md) |
-| Web portal | [apps/web/](apps/web/) | Shared navigation, server-rendered initial data, same-origin API proxy, responsive layouts, loading/error states, light/dark themes | [Next.js App Router, TypeScript, Tailwind, shadcn/ui](apps/web/README.md) |
-
-To explore: save two estimates, compare them in history, filter the market dashboard and download a report, then change a reference property's features in the what-if view. Both application backends call the same model service.
+Saved estimates persist in a SQLite volume; `docker compose down --volumes` deletes that history. Optional port, URL, and timeout settings are in [`.env.example`](.env.example). Native startup instructions are linked in the application table above.
 
 ## Architecture and data flow
 
